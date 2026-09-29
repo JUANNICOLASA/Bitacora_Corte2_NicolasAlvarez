@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Linea de una comanda. Congela el precio del coctel al momento del pedido.
- */
 @Data
 @Builder
 @NoArgsConstructor

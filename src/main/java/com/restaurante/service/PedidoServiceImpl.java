@@ -1,60 +1,59 @@
 package com.restaurante.service;
 
 import com.restaurante.exception.RecursoNoEncontradoException;
+import com.restaurante.mapper.PedidoEntityMapper;
 import com.restaurante.model.domain.Coctel;
 import com.restaurante.model.domain.EstadoPedido;
 import com.restaurante.model.domain.ItemPedido;
 import com.restaurante.model.domain.Modificador;
 import com.restaurante.model.domain.Pedido;
+import com.restaurante.persistence.entity.ItemPedidoEntity;
+import com.restaurante.persistence.entity.PedidoEntity;
+import com.restaurante.repository.PedidoRepository;
 import com.restaurante.util.TextoUtil;
 import com.restaurante.validator.PedidoValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Implementacion en memoria del servicio de comandas.
- * Reutiliza CoctelService y ModificadorService (via interfaz) para validar la carta.
- */
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class PedidoServiceImpl implements PedidoService {
 
     private static final String RECURSO = "Pedido";
+    private static final EnumSet<EstadoPedido> ESTADOS_FINALES =
+            EnumSet.of(EstadoPedido.ENTREGADO, EstadoPedido.CANCELADO);
 
     private final CoctelService coctelService;
     private final ModificadorService modificadorService;
     private final PedidoValidator pedidoValidator;
-
-    private final Map<Long, Pedido> pedidos = new ConcurrentHashMap<>();
-    private final AtomicLong secuencia = new AtomicLong(0);
+    private final PedidoRepository pedidoRepository;
+    private final PedidoEntityMapper pedidoEntityMapper;
 
     @Override
     public Pedido crear(Pedido pedido) {
         List<ItemPedido> solicitados = pedido.getItems() == null ? List.of() : pedido.getItems();
-        List<ItemPedido> items = new ArrayList<>();
-        for (int i = 0; i < solicitados.size(); i++) {
-            items.add(completarItem(solicitados.get(i), (long) i + 1));
-        }
-        pedido.setItems(items);
-        pedido.setId(secuencia.incrementAndGet());
+        List<ItemPedido> items = solicitados.stream()
+                .map(this::completarItem)
+                .toList();
+        pedido.setId(null);
+        pedido.setItems(new ArrayList<>(items));
         pedido.setEstado(EstadoPedido.RECIBIDO);
         pedido.setFechaCreacion(LocalDateTime.now());
-        pedidos.put(pedido.getId(), pedido);
-        log.info("Comanda creada: id={}, mesa={}, items={}", pedido.getId(), pedido.getNumeroMesa(), items.size());
-        return pedido;
+        PedidoEntity guardado = pedidoRepository.save(pedidoEntityMapper.toEntity(pedido));
+        log.info("Comanda creada: id={}, mesa={}, items={}", guardado.getId(), guardado.getNumeroMesa(), items.size());
+        return pedidoEntityMapper.toDomain(guardado);
     }
 
-    private ItemPedido completarItem(ItemPedido item, Long idItem) {
+    private ItemPedido completarItem(ItemPedido item) {
         Coctel coctel = coctelService.obtenerPorId(item.getIdCoctel());
         pedidoValidator.validarCoctelDisponible(coctel);
         pedidoValidator.validarTrazabilidad(coctel, item.getDestilado());
@@ -64,7 +63,7 @@ public class PedidoServiceImpl implements PedidoService {
                 .map(m -> obtenerModificadorValido(coctel, m.getId()))
                 .toList();
 
-        item.setId(idItem);
+        item.setId(null);
         item.setNombreCoctel(coctel.getNombre());
         item.setTipo(coctel.getTipo());
         item.setPrecioUnitario(coctel.getPrecio());
@@ -81,65 +80,73 @@ public class PedidoServiceImpl implements PedidoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Pedido> listar() {
-        return pedidos.values().stream()
-                .sorted(Comparator.comparing(Pedido::getId))
+        return pedidoRepository.findAllByOrderByIdAsc().stream()
+                .map(pedidoEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Pedido> listarPorEstado(EstadoPedido estado) {
-        return listar().stream()
-                .filter(p -> p.getEstado() == estado)
+        return pedidoRepository.findByEstadoOrderByIdAsc(estado).stream()
+                .map(pedidoEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Pedido> listarActivos() {
-        return listar().stream()
-                .filter(Pedido::estaActivo)
-                .sorted(Comparator.comparing(Pedido::getFechaCreacion))
+        return pedidoRepository.findByEstadoNotInOrderByFechaCreacionAsc(ESTADOS_FINALES).stream()
+                .map(pedidoEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Pedido obtenerPorId(Long id) {
-        Pedido pedido = pedidos.get(id);
-        if (pedido == null) {
-            log.warn("Comanda no encontrada: id={}", id);
-            throw new RecursoNoEncontradoException(RECURSO, id);
-        }
-        return pedido;
+        return pedidoEntityMapper.toDomain(buscarEntidad(id));
     }
 
     @Override
     public Pedido cambiarEstado(Long id, EstadoPedido nuevoEstado) {
-        Pedido pedido = obtenerPorId(id);
-        pedidoValidator.validarTransicion(pedido.getEstado(), nuevoEstado);
-        log.info("Comanda id={} cambia de {} a {}", id, pedido.getEstado(), nuevoEstado);
-        pedido.setEstado(nuevoEstado);
-        return pedido;
+        PedidoEntity entity = buscarEntidad(id);
+        pedidoValidator.validarTransicion(entity.getEstado(), nuevoEstado);
+        log.info("Comanda id={} cambia de {} a {}", id, entity.getEstado(), nuevoEstado);
+        entity.setEstado(nuevoEstado);
+        return pedidoEntityMapper.toDomain(pedidoRepository.save(entity));
     }
 
     @Override
     public Pedido cambiarDestilado(Long idPedido, Long idItem, String nuevoDestilado) {
-        Pedido pedido = obtenerPorId(idPedido);
-        ItemPedido item = pedido.getItems().stream()
+        PedidoEntity entity = buscarEntidad(idPedido);
+        ItemPedidoEntity itemEntity = entity.getItems().stream()
                 .filter(i -> i.getId().equals(idItem))
                 .findFirst()
                 .orElseThrow(() -> new RecursoNoEncontradoException("Item de la comanda " + idPedido, idItem));
+        Pedido pedido = pedidoEntityMapper.toDomain(entity);
+        ItemPedido item = pedidoEntityMapper.toItemDomain(itemEntity);
         pedidoValidator.validarCambioDeLicor(pedido, item);
-        log.info("Comanda id={} item={} cambia licor de {} a {}", idPedido, idItem, item.getDestilado(), nuevoDestilado);
-        item.setDestilado(nuevoDestilado.trim());
-        item.setCambiosDeLicor(item.getCambiosDeLicor() + 1);
-        return pedido;
+        log.info("Comanda id={} item={} cambia licor de {} a {}", idPedido, idItem, itemEntity.getDestilado(), nuevoDestilado);
+        itemEntity.setDestilado(nuevoDestilado.trim());
+        itemEntity.setCambiosDeLicor(itemEntity.getCambiosDeLicor() + 1);
+        return pedidoEntityMapper.toDomain(pedidoRepository.save(entity));
     }
 
     @Override
     public void cancelar(Long id) {
-        Pedido pedido = obtenerPorId(id);
-        pedidoValidator.validarTransicion(pedido.getEstado(), EstadoPedido.CANCELADO);
-        pedido.setEstado(EstadoPedido.CANCELADO);
+        PedidoEntity entity = buscarEntidad(id);
+        pedidoValidator.validarTransicion(entity.getEstado(), EstadoPedido.CANCELADO);
+        entity.setEstado(EstadoPedido.CANCELADO);
+        pedidoRepository.save(entity);
         log.info("Comanda id={} cancelada", id);
+    }
+
+    private PedidoEntity buscarEntidad(Long id) {
+        return pedidoRepository.buscarConItems(id).orElseThrow(() -> {
+            log.warn("Comanda no encontrada: id={}", id);
+            return new RecursoNoEncontradoException(RECURSO, id);
+        });
     }
 }

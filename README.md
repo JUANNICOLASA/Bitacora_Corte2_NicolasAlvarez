@@ -10,7 +10,7 @@
 
 Blue Velvet es una API para una coctelería. El proyecto permite manejar la carta de cócteles, los modificadores y las comandas que llegan a la barra.
 
-En esta versión la información se guarda en memoria. Al iniciar la aplicación se carga una carta de ejemplo con cócteles y modificadores.
+La información se guarda en una base de datos PostgreSQL usando Spring Data JPA. Si la base de datos está vacía, al iniciar la aplicación se carga una carta de ejemplo con cócteles y modificadores.
 
 ### Reglas de negocio
 
@@ -35,6 +35,9 @@ En esta versión la información se guarda en memoria. Al iniciar la aplicación
 | Lombok | Reducción de código repetido y logs |
 | MapStruct | Conversión entre objetos |
 | Bean Validation | Validación de datos de entrada |
+| Spring Data JPA | Acceso a la base de datos |
+| PostgreSQL | Base de datos de la aplicación |
+| H2 | Base de datos en memoria para las pruebas |
 | Swagger UI | Consulta y prueba de los endpoints |
 | JUnit 5, Mockito y MockMvc | Pruebas |
 | JaCoCo | Cobertura de pruebas |
@@ -55,6 +58,9 @@ src/main/java/com/restaurante
 │   └── dto/
 │       ├── request/
 │       └── response/
+├── persistence/
+│   └── entity/
+├── repository/
 ├── mapper/
 ├── validator/
 ├── exception/
@@ -63,6 +69,7 @@ src/main/java/com/restaurante
 src/test/java/com/restaurante
 ├── controller/
 ├── service/
+├── repository/
 ├── mapper/
 ├── validator/
 ├── util/
@@ -75,7 +82,9 @@ Las principales partes del proyecto son:
 - `controller`: recibe las solicitudes.
 - `service`: contiene las operaciones de la aplicación.
 - `model`: contiene las clases y datos usados por el proyecto.
-- `mapper`: realiza las conversiones entre objetos.
+- `persistence/entity`: contiene las entidades que representan las tablas de la base de datos.
+- `repository`: contiene los repositorios de Spring Data JPA.
+- `mapper`: realiza las conversiones entre DTOs, dominio y entidades.
 - `validator`: contiene las reglas del negocio.
 - `exception`: maneja los errores.
 - `util`: contiene funciones de apoyo.
@@ -90,6 +99,9 @@ flowchart TD
     CTRL --> M1["Mapper"]
     M1 --> SVC["Service"]
     SVC --> VAL["Validator"]
+    SVC --> ME["Mapper de entidades"]
+    ME --> REPO["Repository"]
+    REPO --> DB[("PostgreSQL")]
     SVC --> M2["Mapper"]
     M2 --> C
     CTRL -. errores .-> GEH["GlobalExceptionHandler"]
@@ -176,6 +188,101 @@ classDiagram
 
 ---
 
+## Persistencia
+
+Para Blue Velvet se escogió una base de datos **relacional (PostgreSQL)**:
+
+- La información tiene relaciones fijas: una comanda tiene ítems, cada ítem pertenece a un cóctel y puede tener modificadores.
+- Las comandas y el inventario necesitan transacciones ACID. Si una comanda falla a la mitad, no debe quedar guardada una parte de ella.
+- Las reglas del negocio se apoyan en restricciones de la base de datos: nombres únicos y llaves foráneas entre comandas, ítems y cócteles.
+- La estructura de la carta no cambia de forma, por lo que no se necesita el esquema flexible de una base NoSQL.
+
+Cada ítem guarda el nombre y el precio del cóctel al momento del pedido, y la tabla `item_modificador` guarda el precio del modificador. Así, si la carta cambia, las comandas anteriores conservan sus valores.
+
+### Modelo relacional
+
+```mermaid
+erDiagram
+    COCTEL {
+        BIGINT id PK
+        VARCHAR nombre UK
+        VARCHAR descripcion
+        DOUBLE precio
+        VARCHAR categoria
+        VARCHAR tipo
+        VARCHAR destilado_base
+        BOOLEAN disponible
+        TIMESTAMP creado_en
+    }
+    MODIFICADOR {
+        BIGINT id PK
+        VARCHAR nombre UK
+        DOUBLE graduacion_alcoholica
+        DOUBLE precio_extra
+        BOOLEAN disponible
+    }
+    PEDIDO {
+        BIGINT id PK
+        INT numero_mesa
+        VARCHAR estado
+        TIMESTAMP fecha_creacion
+    }
+    ITEM_PEDIDO {
+        BIGINT id PK
+        BIGINT id_pedido FK
+        BIGINT id_coctel FK
+        VARCHAR nombre_coctel
+        VARCHAR tipo
+        DOUBLE precio_unitario
+        INT cantidad
+        VARCHAR destilado
+        INT cambios_de_licor
+    }
+    ITEM_MODIFICADOR {
+        BIGINT id PK
+        BIGINT id_item FK
+        BIGINT id_modificador FK
+        DOUBLE precio_extra
+    }
+    PEDIDO ||--|{ ITEM_PEDIDO : contiene
+    COCTEL ||--o{ ITEM_PEDIDO : "se pide en"
+    ITEM_PEDIDO ||--o{ ITEM_MODIFICADOR : tiene
+    MODIFICADOR ||--o{ ITEM_MODIFICADOR : "se aplica en"
+```
+
+### Configuración de la base de datos
+
+La conexión se configura en `application.properties` con variables de entorno. Si no existen, se usan los valores por defecto:
+
+| Variable | Valor por defecto |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/blue_velvet` |
+| `DB_USERNAME` | `postgres` |
+| `DB_PASSWORD` | `postgres` |
+
+Para crear la base de datos con Docker:
+
+```bash
+docker run -d --name blue-velvet-db -e POSTGRES_DB=blue_velvet -e POSTGRES_PASSWORD=postgres -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -p 5432:5432 postgres:16
+```
+
+Las tablas se crean automáticamente al iniciar la aplicación (`ddl-auto=update`). Las pruebas usan H2 en memoria, por lo que no necesitan PostgreSQL.
+
+---
+
+## Roles
+
+| Rol | Puede hacer | No puede hacer |
+|---|---|---|
+| Administrador | Administrar cócteles y modificadores, marcar agotados, consultar y cancelar comandas | Crear comandas, cambiar el licor o el estado de una comanda |
+| Bartender | Ver el tablero de la barra, cambiar el estado de las comandas y marcar productos agotados | Administrar la carta, crear o cancelar comandas |
+| Mesero | Ver la carta, crear comandas, cambiar el licor una vez y cancelar comandas en RECIBIDO | Administrar la carta, marcar agotados y cambiar el estado de las comandas |
+| Cliente | Ver la carta, crear su comanda, cambiar su licor una vez y consultar su comanda | Administrar la carta, ver otras comandas o el tablero y cambiar estados |
+
+La tabla completa por rol y la matriz de permisos por endpoint están en [docs/roles-blue-velvet.xlsx](docs/roles-blue-velvet.xlsx).
+
+---
+
 ## Funcionalidades
 
 | Funcionalidad | Descripción |
@@ -256,7 +363,7 @@ Los errores se devuelven con un formato común.
 | 400 `BV-400` | Datos de entrada incorrectos |
 | 404 `BV-404` | Recurso no encontrado |
 | 405 `BV-405` | Método no permitido |
-| 409 `BV-409` | Nombre duplicado |
+| 409 `BV-409` | Nombre duplicado o cóctel con comandas registradas |
 | 422 `BV-422` | Regla de negocio no cumplida |
 | 500 `BV-500` | Error inesperado |
 
@@ -271,10 +378,11 @@ Se realizaron pruebas para las diferentes partes del proyecto:
 | Servicios | Creación, actualización, eliminación, búsquedas y reglas de pedidos |
 | Validadores | Alcohol, Mocktails, cambio de licor y estados |
 | Utilidades | Normalización de nombres y etiquetas |
-| Mappers | Conversión de los datos |
+| Mappers | Conversión entre DTOs, dominio y entidades |
+| Repositorios | Consultas a la base de datos con H2 |
 | Dominio | Totales, subtotales y estados |
 | Controladores | Respuestas HTTP y errores |
-| Integración | Inicio de la aplicación y creación de una comanda |
+| Integración | Flujo completo de una comanda y CRUD de un cóctel guardados en base de datos |
 
 ---
 
@@ -298,6 +406,38 @@ Se realizaron pruebas para las diferentes partes del proyecto:
 
 ![SonarQube](docs/evidencias/sonar.png)
 
+### Persistencia en PostgreSQL
+
+Se probó el CRUD de un cóctel desde Swagger y se revisó el resultado directamente en la base de datos.
+
+**Tablas creadas por Hibernate en PostgreSQL**
+
+![Tablas en la base de datos](docs/evidencias/bd-tablas.png)
+
+**Crear un cóctel (201)**
+
+![Crear coctel](docs/evidencias/bd-crud-crear.png)
+
+**Consultar el cóctel creado (200)**
+
+![Consultar coctel](docs/evidencias/bd-crud-consultar.png)
+
+**Registro guardado en la tabla `coctel`**
+
+![Coctel guardado en la base de datos](docs/evidencias/bd-crud-coctel.png)
+
+**Eliminar el cóctel (204)**
+
+![Eliminar coctel](docs/evidencias/bd-crud-eliminar.png)
+
+**Los datos se conservan al reiniciar la aplicación**
+
+Al volver a iniciar, la aplicación detecta que la base ya tiene información y no vuelve a cargar la carta inicial. La consulta de cócteles devuelve los mismos registros.
+
+![Reinicio de la aplicacion](docs/evidencias/bd-reinicio-log.png)
+
+![Cocteles despues del reinicio](docs/evidencias/bd-reinicio-listado.png)
+
 ### Pruebas funcionales
 
 | Funcionalidad | Evidencia |
@@ -315,6 +455,6 @@ Se realizaron pruebas para las diferentes partes del proyecto:
 
 ## Fuera de alcance
 
-- Base de datos y persistencia.
+- Autenticación y aplicación de los roles en la API.
 - Pagos y facturación electrónica.
 - Interfaz gráfica.

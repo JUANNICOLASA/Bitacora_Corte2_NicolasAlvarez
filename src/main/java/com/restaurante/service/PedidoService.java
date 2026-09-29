@@ -5,9 +5,6 @@ import com.restaurante.model.domain.Pedido;
 
 import java.util.List;
 
-/**
- * Contrato del servicio de comandas (tablero del bartender - KDS).
- */
 public interface PedidoService {
 
     Pedido crear(Pedido pedido);

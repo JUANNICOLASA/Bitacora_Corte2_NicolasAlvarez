@@ -5,10 +5,6 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Informacion general de la documentacion OpenAPI.
- * Swagger UI: http://localhost:8080/swagger-ui/index.html
- */
 @Configuration
 @OpenAPIDefinition(info = @Info(
         title = "Blue Velvet API",

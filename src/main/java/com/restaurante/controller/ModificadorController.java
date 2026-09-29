@@ -26,9 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Administracion de los modificadores (adiciones) del inventario de barra.
- */
 @Tag(name = "Modificadores", description = "Adiciones para personalizar los cocteles")
 @RestController
 @RequestMapping("/api/v1/modificadores")

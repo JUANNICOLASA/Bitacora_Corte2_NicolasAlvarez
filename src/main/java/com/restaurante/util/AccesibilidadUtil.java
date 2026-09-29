@@ -1,9 +1,5 @@
 package com.restaurante.util;
 
-/**
- * Reglas de accesibilidad: la informacion critica nunca se transmite
- * solo con color. Ademas del color, la API entrega una etiqueta en texto y un icono.
- */
 public final class AccesibilidadUtil {
 
     public static final String ETIQUETA_AGOTADO = "AGOTADO EN BARRA";
@@ -23,9 +19,6 @@ public final class AccesibilidadUtil {
         return disponible ? ICONO_DISPONIBLE : ICONO_CANDADO;
     }
 
-    /**
-     * Etiqueta para un modificador dentro de un coctel.
-     */
     public static String etiquetaModificador(boolean disponible, boolean bloqueadoPorMocktail) {
         if (!disponible) {
             return ETIQUETA_AGOTADO;

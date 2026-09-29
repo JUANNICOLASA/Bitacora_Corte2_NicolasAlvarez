@@ -2,68 +2,71 @@ package com.restaurante.service;
 
 import com.restaurante.exception.RecursoDuplicadoException;
 import com.restaurante.exception.RecursoNoEncontradoException;
+import com.restaurante.mapper.ModificadorEntityMapper;
 import com.restaurante.model.domain.Modificador;
-import com.restaurante.util.TextoUtil;
+import com.restaurante.persistence.entity.ModificadorEntity;
+import com.restaurante.repository.ModificadorRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Implementacion en memoria (sin base de datos) del servicio de modificadores.
- */
 @Slf4j
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class ModificadorServiceImpl implements ModificadorService {
 
     private static final String RECURSO = "Modificador";
 
-    private final Map<Long, Modificador> modificadores = new ConcurrentHashMap<>();
-    private final AtomicLong secuencia = new AtomicLong(0);
+    private final ModificadorRepository modificadorRepository;
+    private final ModificadorEntityMapper modificadorEntityMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<Modificador> listar() {
-        return modificadores.values().stream()
-                .sorted(Comparator.comparing(Modificador::getId))
+        return modificadorRepository.findAllByOrderByIdAsc().stream()
+                .map(modificadorEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Modificador obtenerPorId(Long id) {
-        Modificador modificador = modificadores.get(id);
-        if (modificador == null) {
-            log.warn("Modificador no encontrado: id={}", id);
-            throw new RecursoNoEncontradoException(RECURSO, id);
-        }
-        return modificador;
+        return modificadorEntityMapper.toDomain(buscarEntidad(id));
     }
 
     @Override
     public Modificador crear(Modificador modificador) {
-        boolean duplicado = modificadores.values().stream()
-                .anyMatch(m -> TextoUtil.sonIguales(m.getNombre(), modificador.getNombre()));
-        if (duplicado) {
-            throw new RecursoDuplicadoException(
-                    "Ya existe un modificador con el nombre " + modificador.getNombre());
+        String nombre = modificador.getNombre().trim();
+        if (modificadorRepository.existsByNombreIgnoreCase(nombre)) {
+            throw new RecursoDuplicadoException("Ya existe un modificador con el nombre " + nombre);
         }
-        modificador.setId(secuencia.incrementAndGet());
+        modificador.setId(null);
+        modificador.setNombre(nombre);
         if (modificador.getDisponible() == null) {
             modificador.setDisponible(true);
         }
-        modificadores.put(modificador.getId(), modificador);
-        log.info("Modificador creado: id={}, nombre={}", modificador.getId(), modificador.getNombre());
-        return modificador;
+        ModificadorEntity guardado = modificadorRepository.save(modificadorEntityMapper.toEntity(modificador));
+        log.info("Modificador creado: id={}, nombre={}", guardado.getId(), guardado.getNombre());
+        return modificadorEntityMapper.toDomain(guardado);
     }
 
     @Override
     public Modificador cambiarDisponibilidad(Long id, boolean disponible) {
-        Modificador modificador = obtenerPorId(id);
-        modificador.setDisponible(disponible);
+        ModificadorEntity entity = buscarEntidad(id);
+        entity.setDisponible(disponible);
+        ModificadorEntity guardado = modificadorRepository.save(entity);
         log.info("Modificador id={} disponible={}", id, disponible);
-        return modificador;
+        return modificadorEntityMapper.toDomain(guardado);
+    }
+
+    private ModificadorEntity buscarEntidad(Long id) {
+        return modificadorRepository.findById(id).orElseThrow(() -> {
+            log.warn("Modificador no encontrado: id={}", id);
+            return new RecursoNoEncontradoException(RECURSO, id);
+        });
     }
 }

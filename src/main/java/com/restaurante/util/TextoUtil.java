@@ -3,17 +3,11 @@ package com.restaurante.util;
 import java.text.Normalizer;
 import java.util.Locale;
 
-/**
- * Utilidades de texto.
- */
 public final class TextoUtil {
 
     private TextoUtil() {
     }
 
-    /**
-     * Normaliza un texto para compararlo
-     */
     public static String normalizar(String texto) {
         if (texto == null) {
             return "";

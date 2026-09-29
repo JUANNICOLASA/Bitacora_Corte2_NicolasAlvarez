@@ -4,16 +4,25 @@ import com.restaurante.exception.RecursoDuplicadoException;
 import com.restaurante.exception.ReglaNegocioException;
 import com.restaurante.model.domain.Coctel;
 import com.restaurante.model.domain.TipoBebida;
+import com.restaurante.repository.CoctelRepository;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class CoctelValidatorTest {
 
-    private final CoctelValidator validator = new CoctelValidator();
+    @Mock
+    private CoctelRepository coctelRepository;
+
+    @InjectMocks
+    private CoctelValidator validator;
 
     @Test
     void alcoholicoConDestiladoEsValido() {
@@ -44,16 +53,32 @@ class CoctelValidatorTest {
     }
 
     @Test
-    void nombreDuplicadoLanzaConflicto() {
-        List<Coctel> existentes = List.of(Coctel.builder().id(1L).nombre("Negroni").build());
-        assertThatThrownBy(() -> validator.validarNombreUnico("  NEGRONI ", existentes, null))
+    void nombreDuplicadoAlCrearLanzaConflicto() {
+        when(coctelRepository.existsByNombreIgnoreCase("NEGRONI")).thenReturn(true);
+
+        assertThatThrownBy(() -> validator.validarNombreUnico("  NEGRONI ", null))
                 .isInstanceOf(RecursoDuplicadoException.class);
     }
 
     @Test
-    void mismoNombreDelMismoCoctelAlActualizarEsValido() {
-        List<Coctel> existentes = List.of(Coctel.builder().id(1L).nombre("Negroni").build());
-        assertThatCode(() -> validator.validarNombreUnico("Negroni", existentes, 1L))
-                .doesNotThrowAnyException();
+    void nombreNuevoAlCrearEsValido() {
+        when(coctelRepository.existsByNombreIgnoreCase("Boulevardier")).thenReturn(false);
+
+        assertThatCode(() -> validator.validarNombreUnico("Boulevardier", null)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void alActualizarSeExcluyeElMismoCoctel() {
+        when(coctelRepository.existsByNombreIgnoreCaseAndIdNot("Negroni", 1L)).thenReturn(false);
+
+        assertThatCode(() -> validator.validarNombreUnico("Negroni", 1L)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void alActualizarConNombreDeOtroCoctelLanzaConflicto() {
+        when(coctelRepository.existsByNombreIgnoreCaseAndIdNot("", 2L)).thenReturn(true);
+
+        assertThatThrownBy(() -> validator.validarNombreUnico(null, 2L))
+                .isInstanceOf(RecursoDuplicadoException.class);
     }
 }

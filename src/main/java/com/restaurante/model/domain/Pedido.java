@@ -9,9 +9,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Comanda enviada al tablero del bartender.
- */
 @Data
 @Builder
 @NoArgsConstructor

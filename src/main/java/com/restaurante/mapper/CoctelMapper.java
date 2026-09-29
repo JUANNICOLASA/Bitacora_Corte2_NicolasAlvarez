@@ -8,9 +8,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Transforma cocteles entre DTOs y dominio.
- */
 @Mapper(componentModel = "spring")
 public interface CoctelMapper {
 

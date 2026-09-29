@@ -31,9 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Comandas enviadas al tablero del bartender (KDS).
- */
 @Tag(name = "Pedidos", description = "Comandas y tablero del bartender (KDS)")
 @RestController
 @RequestMapping("/api/v1/pedidos")

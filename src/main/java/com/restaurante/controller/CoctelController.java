@@ -28,9 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Administracion de la carta de cocteles (uso del administrador del bar).
- */
 @Tag(name = "Cocteles", description = "Administracion de la carta de cocteles")
 @RestController
 @RequestMapping("/api/v1/cocteles")
@@ -101,6 +98,8 @@ public class CoctelController {
     @Operation(summary = "Eliminar un coctel de la carta")
     @ApiResponse(responseCode = "204", description = "Coctel eliminado")
     @ApiResponse(responseCode = "404", description = "El coctel no existe",
+            content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @ApiResponse(responseCode = "409", description = "El coctel tiene comandas registradas",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {

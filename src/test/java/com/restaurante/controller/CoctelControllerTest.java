@@ -1,6 +1,7 @@
 package com.restaurante.controller;
 
 import com.restaurante.exception.RecursoDuplicadoException;
+import com.restaurante.exception.RecursoEnUsoException;
 import com.restaurante.exception.RecursoNoEncontradoException;
 import com.restaurante.mapper.CoctelMapper;
 import com.restaurante.model.domain.CategoriaCoctel;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -172,5 +174,22 @@ class CoctelControllerTest {
     void metodoNoPermitidoDevuelve405() throws Exception {
         mockMvc.perform(put(URL).contentType(MediaType.APPLICATION_JSON).content(BODY_VALIDO))
                 .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void eliminarConComandasDevuelve409() throws Exception {
+        doThrow(new RecursoEnUsoException("tiene comandas")).when(coctelService).eliminar(3L);
+
+        mockMvc.perform(delete(URL + "/3"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("BV-409"));
+    }
+
+    @Test
+    void conflictoDeIntegridadDevuelve409() throws Exception {
+        when(coctelService.crear(any(Coctel.class))).thenThrow(new DataIntegrityViolationException("unique"));
+
+        mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(BODY_VALIDO))
+                .andExpect(status().isConflict());
     }
 }

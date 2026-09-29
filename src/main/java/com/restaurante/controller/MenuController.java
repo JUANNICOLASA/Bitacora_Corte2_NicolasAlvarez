@@ -24,9 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Carta digital que ve el cliente. Reutiliza CoctelService: mismo servicio, distinta vista.
- */
 @Tag(name = "Menu", description = "Carta digital sincronizada con el inventario de barra")
 @RestController
 @RequestMapping("/api/v1/menu")

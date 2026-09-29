@@ -12,10 +12,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-/**
- * Carga la carta inicial de Blue Velvet en memoria al arrancar la aplicacion.
- * No se ejecuta en el perfil "test".
- */
 @Slf4j
 @Component
 @Profile("!test")
@@ -27,6 +23,10 @@ public class DatosIniciales implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (!coctelService.listar().isEmpty()) {
+            log.info("La carta de Blue Velvet ya tiene datos, no se carga la carta inicial");
+            return;
+        }
         coctelService.crear(coctel("Blue Velvet Signature",
                 "Gin, licor de mora azul, limon y espuma de lavanda", 42000.0,
                 CategoriaCoctel.DE_AUTOR, TipoBebida.ALCOHOLICA, "Gin", true));

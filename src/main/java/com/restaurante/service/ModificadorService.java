@@ -4,9 +4,6 @@ import com.restaurante.model.domain.Modificador;
 
 import java.util.List;
 
-/**
- * Contrato del servicio de modificadores (adiciones de los cocteles).
- */
 public interface ModificadorService {
 
     List<Modificador> listar();

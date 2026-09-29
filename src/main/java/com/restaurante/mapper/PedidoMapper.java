@@ -12,10 +12,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Transforma comandas entre DTOs y dominio.
- * El request solo trae ids: el service completa nombre, precio y modificadores.
- */
 @Mapper(componentModel = "spring")
 public interface PedidoMapper {
 

@@ -5,9 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Coctel de la carta. El atributo destiladoBase indica el tipo de licor
- */
 @Data
 @Builder
 @NoArgsConstructor

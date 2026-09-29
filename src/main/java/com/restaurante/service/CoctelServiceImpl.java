@@ -1,104 +1,117 @@
 package com.restaurante.service;
 
+import com.restaurante.exception.RecursoEnUsoException;
 import com.restaurante.exception.RecursoNoEncontradoException;
+import com.restaurante.mapper.CoctelEntityMapper;
 import com.restaurante.model.domain.CategoriaCoctel;
 import com.restaurante.model.domain.Coctel;
+import com.restaurante.persistence.entity.CoctelEntity;
+import com.restaurante.repository.CoctelRepository;
+import com.restaurante.repository.PedidoRepository;
 import com.restaurante.validator.CoctelValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Implementacion en memoria (sin base de datos) del servicio de cocteles.
- */
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CoctelServiceImpl implements CoctelService {
 
     private static final String RECURSO = "Coctel";
 
+    private final CoctelRepository coctelRepository;
+    private final PedidoRepository pedidoRepository;
+    private final CoctelEntityMapper coctelEntityMapper;
     private final CoctelValidator coctelValidator;
 
-    private final Map<Long, Coctel> cocteles = new ConcurrentHashMap<>();
-    private final AtomicLong secuencia = new AtomicLong(0);
-
     @Override
+    @Transactional(readOnly = true)
     public List<Coctel> listar() {
-        return cocteles.values().stream()
-                .sorted(Comparator.comparing(Coctel::getId))
+        return coctelRepository.findAllByOrderByIdAsc().stream()
+                .map(coctelEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Coctel> listarPorCategoria(CategoriaCoctel categoria) {
-        return listar().stream()
-                .filter(c -> c.getCategoria() == categoria)
+        return coctelRepository.findByCategoriaOrderByIdAsc(categoria).stream()
+                .map(coctelEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Coctel> obtenerDisponibles() {
-        return listar().stream()
-                .filter(Coctel::estaDisponible)
+        return coctelRepository.findByDisponibleTrueOrderByIdAsc().stream()
+                .map(coctelEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Coctel obtenerPorId(Long id) {
-        Coctel coctel = cocteles.get(id);
-        if (coctel == null) {
-            log.warn("Coctel no encontrado: id={}", id);
-            throw new RecursoNoEncontradoException(RECURSO, id);
-        }
-        return coctel;
+        return coctelEntityMapper.toDomain(buscarEntidad(id));
     }
 
     @Override
     public Coctel crear(Coctel coctel) {
         coctelValidator.validarCoctel(coctel);
-        coctelValidator.validarNombreUnico(coctel.getNombre(), cocteles.values(), null);
-        coctel.setId(secuencia.incrementAndGet());
+        coctelValidator.validarNombreUnico(coctel.getNombre(), null);
+        coctel.setId(null);
+        coctel.setNombre(coctel.getNombre().trim());
         if (coctel.getDisponible() == null) {
             coctel.setDisponible(true);
         }
-        cocteles.put(coctel.getId(), coctel);
-        log.info("Coctel creado: id={}, nombre={}", coctel.getId(), coctel.getNombre());
-        return coctel;
+        CoctelEntity guardado = coctelRepository.save(coctelEntityMapper.toEntity(coctel));
+        log.info("Coctel creado: id={}, nombre={}", guardado.getId(), guardado.getNombre());
+        return coctelEntityMapper.toDomain(guardado);
     }
 
     @Override
     public Coctel actualizar(Long id, Coctel coctel) {
-        Coctel existente = obtenerPorId(id);
+        CoctelEntity entity = buscarEntidad(id);
         coctelValidator.validarCoctel(coctel);
-        coctelValidator.validarNombreUnico(coctel.getNombre(), cocteles.values(), id);
-        coctel.setId(id);
+        coctelValidator.validarNombreUnico(coctel.getNombre(), id);
+        coctel.setNombre(coctel.getNombre().trim());
         if (coctel.getDisponible() == null) {
-            coctel.setDisponible(existente.getDisponible());
+            coctel.setDisponible(entity.getDisponible());
         }
-        cocteles.put(id, coctel);
+        coctelEntityMapper.actualizarEntity(coctel, entity);
+        CoctelEntity guardado = coctelRepository.save(entity);
         log.info("Coctel actualizado: id={}", id);
-        return coctel;
+        return coctelEntityMapper.toDomain(guardado);
     }
 
     @Override
     public Coctel cambiarDisponibilidad(Long id, boolean disponible) {
-        Coctel coctel = obtenerPorId(id);
-        coctel.setDisponible(disponible);
+        CoctelEntity entity = buscarEntidad(id);
+        entity.setDisponible(disponible);
+        CoctelEntity guardado = coctelRepository.save(entity);
         log.info("Coctel id={} disponible={}", id, disponible);
-        return coctel;
+        return coctelEntityMapper.toDomain(guardado);
     }
 
     @Override
     public void eliminar(Long id) {
-        obtenerPorId(id);
-        cocteles.remove(id);
+        buscarEntidad(id);
+        if (pedidoRepository.existsByItemsCoctelId(id)) {
+            throw new RecursoEnUsoException(
+                    "El coctel tiene comandas registradas. Marquelo como agotado en lugar de eliminarlo");
+        }
+        coctelRepository.deleteById(id);
         log.info("Coctel eliminado: id={}", id);
+    }
+
+    private CoctelEntity buscarEntidad(Long id) {
+        return coctelRepository.findById(id).orElseThrow(() -> {
+            log.warn("Coctel no encontrado: id={}", id);
+            return new RecursoNoEncontradoException(RECURSO, id);
+        });
     }
 }

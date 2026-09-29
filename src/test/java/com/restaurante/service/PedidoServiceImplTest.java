@@ -2,21 +2,29 @@ package com.restaurante.service;
 
 import com.restaurante.exception.RecursoNoEncontradoException;
 import com.restaurante.exception.ReglaNegocioException;
+import com.restaurante.mapper.PedidoEntityMapper;
 import com.restaurante.model.domain.Coctel;
 import com.restaurante.model.domain.EstadoPedido;
 import com.restaurante.model.domain.ItemPedido;
 import com.restaurante.model.domain.Modificador;
 import com.restaurante.model.domain.Pedido;
 import com.restaurante.model.domain.TipoBebida;
+import com.restaurante.persistence.entity.ItemPedidoEntity;
+import com.restaurante.persistence.entity.PedidoEntity;
+import com.restaurante.repository.PedidoRepository;
 import com.restaurante.validator.PedidoValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,6 +45,12 @@ class PedidoServiceImplTest {
 
     @Mock
     private PedidoValidator pedidoValidator;
+
+    @Mock
+    private PedidoRepository pedidoRepository;
+
+    @Spy
+    private PedidoEntityMapper pedidoEntityMapper = Mappers.getMapper(PedidoEntityMapper.class);
 
     @InjectMocks
     private PedidoServiceImpl pedidoService;
@@ -60,15 +74,31 @@ class PedidoServiceImplTest {
         return Pedido.builder().numeroMesa(7).items(new ArrayList<>(List.of(item))).build();
     }
 
-    private Pedido crearPedidoValido() {
-        when(coctelService.obtenerPorId(1L)).thenReturn(negroni);
-        return pedidoService.crear(pedidoSolicitado(null));
+    private void simularGuardado() {
+        when(pedidoRepository.save(any(PedidoEntity.class))).thenAnswer(invocacion -> {
+            PedidoEntity entity = invocacion.getArgument(0);
+            entity.setId(1L);
+            long idItem = 1;
+            for (ItemPedidoEntity item : entity.getItems()) {
+                item.setId(idItem++);
+            }
+            return entity;
+        });
+    }
+
+    private PedidoEntity pedidoGuardado(EstadoPedido estado, TipoBebida tipo, int cambiosDeLicor) {
+        ItemPedido item = ItemPedido.builder().id(1L).idCoctel(1L).nombreCoctel("Negroni").tipo(tipo)
+                .precioUnitario(38000.0).cantidad(1).destilado("Tanqueray").cambiosDeLicor(cambiosDeLicor).build();
+        Pedido pedido = Pedido.builder().id(1L).numeroMesa(7).estado(estado)
+                .fechaCreacion(LocalDateTime.now()).items(new ArrayList<>(List.of(item))).build();
+        return pedidoEntityMapper.toEntity(pedido);
     }
 
     @Test
-    void crearCompletaItemsYQuedaEnRecibido() {
+    void crearCompletaItemsGuardaYQuedaEnRecibido() {
         when(coctelService.obtenerPorId(1L)).thenReturn(negroni);
         when(modificadorService.obtenerPorId(1L)).thenReturn(shot);
+        simularGuardado();
 
         Pedido creado = pedidoService.crear(pedidoSolicitado(1L));
 
@@ -80,7 +110,7 @@ class PedidoServiceImplTest {
         assertThat(item.getNombreCoctel()).isEqualTo("Negroni");
         assertThat(item.getPrecioUnitario()).isEqualTo(38000.0);
         assertThat(item.getDestilado()).isEqualTo("Tanqueray");
-        assertThat(item.getModificadores()).containsExactly(shot);
+        assertThat(item.getModificadores()).extracting(Modificador::getNombre).containsExactly("Shot extra");
         assertThat(creado.calcularTotal()).isEqualTo(94000.0);
         verify(pedidoValidator).validarCoctelDisponible(negroni);
         verify(pedidoValidator).validarTrazabilidad(negroni, "  Tanqueray  ");
@@ -96,7 +126,7 @@ class PedidoServiceImplTest {
         Pedido solicitado = pedidoSolicitado(null);
         assertThatThrownBy(() -> pedidoService.crear(solicitado))
                 .isInstanceOf(ReglaNegocioException.class);
-        assertThat(pedidoService.listar()).isEmpty();
+        verify(pedidoRepository, never()).save(any());
     }
 
     @Test
@@ -109,94 +139,122 @@ class PedidoServiceImplTest {
     }
 
     @Test
-    void crearSinItemsNiModificadoresNoFalla() {
-        Pedido vacio = Pedido.builder().numeroMesa(1).items(null).build();
-        Pedido creado = pedidoService.crear(vacio);
-        assertThat(creado.getItems()).isEmpty();
-
+    void crearSinModificadoresNiDestilado() {
         when(coctelService.obtenerPorId(1L)).thenReturn(negroni);
-        ItemPedido sinModificadores = ItemPedido.builder().idCoctel(1L).cantidad(1)
-                .destilado(" ").modificadores(null).build();
-        Pedido otro = pedidoService.crear(Pedido.builder().numeroMesa(2)
-                .items(new ArrayList<>(List.of(sinModificadores))).build());
-        assertThat(otro.getItems().get(0).getModificadores()).isEmpty();
-        assertThat(otro.getItems().get(0).getDestilado()).isNull();
+        simularGuardado();
+        ItemPedido item = ItemPedido.builder().idCoctel(1L).cantidad(1).destilado(" ").modificadores(null).build();
+
+        Pedido creado = pedidoService.crear(Pedido.builder().numeroMesa(2)
+                .items(new ArrayList<>(List.of(item))).build());
+
+        assertThat(creado.getItems().get(0).getModificadores()).isEmpty();
+        assertThat(creado.getItems().get(0).getDestilado()).isNull();
+    }
+
+    @Test
+    void crearSinItemsGuardaComandaVacia() {
+        simularGuardado();
+
+        Pedido creado = pedidoService.crear(Pedido.builder().numeroMesa(1).items(null).build());
+
+        assertThat(creado.getItems()).isEmpty();
     }
 
     @Test
     void listarPorEstadoYActivos() {
-        Pedido primero = crearPedidoValido();
-        Pedido segundo = pedidoService.crear(pedidoSolicitado(null));
-        segundo.setEstado(EstadoPedido.ENTREGADO);
+        PedidoEntity recibido = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.findAllByOrderByIdAsc()).thenReturn(List.of(recibido));
+        when(pedidoRepository.findByEstadoOrderByIdAsc(EstadoPedido.RECIBIDO)).thenReturn(List.of(recibido));
+        when(pedidoRepository.findByEstadoNotInOrderByFechaCreacionAsc(any())).thenReturn(List.of(recibido));
 
-        assertThat(pedidoService.listar()).hasSize(2);
-        assertThat(pedidoService.listarPorEstado(EstadoPedido.RECIBIDO)).containsExactly(primero);
-        assertThat(pedidoService.listarActivos()).containsExactly(primero);
+        assertThat(pedidoService.listar()).hasSize(1);
+        assertThat(pedidoService.listarPorEstado(EstadoPedido.RECIBIDO)).extracting(Pedido::getId).containsExactly(1L);
+        assertThat(pedidoService.listarActivos()).extracting(Pedido::getEstado).containsExactly(EstadoPedido.RECIBIDO);
     }
 
     @Test
     void listarVacioDevuelveListaVacia() {
+        when(pedidoRepository.findAllByOrderByIdAsc()).thenReturn(List.of());
+
         assertThat(pedidoService.listar()).isEmpty();
-        assertThat(pedidoService.listarActivos()).isEmpty();
     }
 
     @Test
     void obtenerPorIdInexistenteLanzaNoEncontrado() {
+        when(pedidoRepository.buscarConItems(10L)).thenReturn(Optional.empty());
+
         assertThatThrownBy(() -> pedidoService.obtenerPorId(10L))
                 .isInstanceOf(RecursoNoEncontradoException.class);
     }
 
     @Test
-    void cambiarEstadoValidaLaTransicion() {
-        Pedido creado = crearPedidoValido();
+    void obtenerPorIdExistente() {
+        PedidoEntity entity = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.buscarConItems(1L)).thenReturn(Optional.of(entity));
 
-        Pedido resultado = pedidoService.cambiarEstado(creado.getId(), EstadoPedido.EN_PREPARACION);
+        Pedido pedido = pedidoService.obtenerPorId(1L);
+
+        assertThat(pedido.getItems()).extracting(ItemPedido::getIdCoctel).containsExactly(1L);
+    }
+
+    @Test
+    void cambiarEstadoValidaLaTransicionYGuarda() {
+        PedidoEntity entity = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.buscarConItems(1L)).thenReturn(Optional.of(entity));
+        when(pedidoRepository.save(entity)).thenReturn(entity);
+
+        Pedido resultado = pedidoService.cambiarEstado(1L, EstadoPedido.EN_PREPARACION);
 
         assertThat(resultado.getEstado()).isEqualTo(EstadoPedido.EN_PREPARACION);
         verify(pedidoValidator).validarTransicion(EstadoPedido.RECIBIDO, EstadoPedido.EN_PREPARACION);
     }
 
     @Test
-    void cambiarEstadoInvalidoNoModificaLaComanda() {
-        Pedido creado = crearPedidoValido();
+    void cambiarEstadoInvalidoNoGuarda() {
+        PedidoEntity entity = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.buscarConItems(1L)).thenReturn(Optional.of(entity));
         doThrow(new ReglaNegocioException("Transicion invalida"))
                 .when(pedidoValidator).validarTransicion(EstadoPedido.RECIBIDO, EstadoPedido.ENTREGADO);
 
-        Long id = creado.getId();
-        assertThatThrownBy(() -> pedidoService.cambiarEstado(id, EstadoPedido.ENTREGADO))
+        assertThatThrownBy(() -> pedidoService.cambiarEstado(1L, EstadoPedido.ENTREGADO))
                 .isInstanceOf(ReglaNegocioException.class);
-        assertThat(creado.getEstado()).isEqualTo(EstadoPedido.RECIBIDO);
+        assertThat(entity.getEstado()).isEqualTo(EstadoPedido.RECIBIDO);
+        verify(pedidoRepository, never()).save(any());
     }
 
     @Test
     void cambiarDestiladoSumaUnCambio() {
-        Pedido creado = crearPedidoValido();
+        PedidoEntity entity = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.buscarConItems(1L)).thenReturn(Optional.of(entity));
+        when(pedidoRepository.save(entity)).thenReturn(entity);
 
-        Pedido resultado = pedidoService.cambiarDestilado(creado.getId(), 1L, " Hendrick's ");
+        Pedido resultado = pedidoService.cambiarDestilado(1L, 1L, " Hendrick's ");
 
         ItemPedido item = resultado.getItems().get(0);
         assertThat(item.getDestilado()).isEqualTo("Hendrick's");
         assertThat(item.getCambiosDeLicor()).isEqualTo(1);
-        verify(pedidoValidator).validarCambioDeLicor(creado, item);
+        verify(pedidoValidator).validarCambioDeLicor(any(Pedido.class), any(ItemPedido.class));
     }
 
     @Test
     void cambiarDestiladoDeItemInexistenteLanzaNoEncontrado() {
-        Pedido creado = crearPedidoValido();
+        PedidoEntity entity = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.buscarConItems(1L)).thenReturn(Optional.of(entity));
 
-        Long id = creado.getId();
-        assertThatThrownBy(() -> pedidoService.cambiarDestilado(id, 9L, "Bombay"))
+        assertThatThrownBy(() -> pedidoService.cambiarDestilado(1L, 9L, "Bombay"))
                 .isInstanceOf(RecursoNoEncontradoException.class);
         verify(pedidoValidator, never()).validarCambioDeLicor(any(), any());
     }
 
     @Test
     void cancelarDejaLaComandaCancelada() {
-        Pedido creado = crearPedidoValido();
+        PedidoEntity entity = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.buscarConItems(1L)).thenReturn(Optional.of(entity));
 
-        pedidoService.cancelar(creado.getId());
+        pedidoService.cancelar(1L);
 
-        assertThat(creado.getEstado()).isEqualTo(EstadoPedido.CANCELADO);
+        assertThat(entity.getEstado()).isEqualTo(EstadoPedido.CANCELADO);
         verify(pedidoValidator).validarTransicion(EstadoPedido.RECIBIDO, EstadoPedido.CANCELADO);
+        verify(pedidoRepository).save(entity);
     }
 }

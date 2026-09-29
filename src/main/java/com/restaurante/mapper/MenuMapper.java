@@ -10,10 +10,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Construye la vista del cliente (carta digital). Ademas del estado, agrega etiqueta e icono
- * para no depender solo del color (regla de accesibilidad de Blue Velvet).
- */
 @Mapper(componentModel = "spring", imports = AccesibilidadUtil.class)
 public interface MenuMapper {
 
@@ -24,10 +20,6 @@ public interface MenuMapper {
 
     List<MenuItemResponseDTO> toMenuItems(List<Coctel> cocteles);
 
-    /**
-     * Modificador visto dentro de un coctel: se bloquea si esta agotado o si tiene alcohol
-     * y el coctel es Mocktail.
-     */
     default ModificadorMenuResponseDTO toModificadorMenu(Modificador modificador, Coctel coctel) {
         boolean habilitado = modificador.esCompatibleCon(coctel);
         boolean bloqueadoPorMocktail = coctel.esMocktail() && modificador.esAlcoholico();

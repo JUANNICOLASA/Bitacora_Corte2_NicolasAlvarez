@@ -3,9 +3,6 @@ package com.restaurante.exception;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-/**
- * Excepcion base del negocio. Cada subclase define su codigo HTTP y un codigo interno.
- */
 @Getter
 public abstract class BlueVelvetException extends RuntimeException {
 

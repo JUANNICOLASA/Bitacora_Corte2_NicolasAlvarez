@@ -4,6 +4,7 @@ import com.restaurante.exception.BlueVelvetException;
 import com.restaurante.model.dto.response.ErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,10 +18,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * El "gerente" del restaurante: intercepta los errores de toda la API y responde siempre
- * con el mismo formato (ErrorResponseDTO). Los handlers van de mas especifico a mas general.
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -57,6 +54,14 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, "BV-400", mensaje, request, List.of());
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> manejarIntegridad(DataIntegrityViolationException ex,
+                                                              HttpServletRequest request) {
+        log.warn("Conflicto de integridad en {}", request.getRequestURI());
+        return construir(HttpStatus.CONFLICT, "BV-409",
+                "La operacion entra en conflicto con datos existentes", request, List.of());
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponseDTO> manejarRutaInexistente(NoResourceFoundException ex,
                                                                    HttpServletRequest request) {
@@ -69,7 +74,6 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.METHOD_NOT_ALLOWED, "BV-405",
                 "El metodo " + ex.getMethod() + " no esta permitido en esta ruta", request, List.of());
     }
-
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> manejarGeneral(Exception ex, HttpServletRequest request) {
