@@ -24,4 +24,6 @@ Thumbs.db
 
 # Secretos
 .env
+.env.*
+!.env.example
 *.p12
