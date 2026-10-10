@@ -33,5 +33,6 @@ public class EventoComandaDocument {
 
     private String usuario;
 
+    @Indexed
     private LocalDateTime fecha;
 }
