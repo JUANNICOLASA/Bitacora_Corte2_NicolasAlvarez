@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: qa
-      url: https://${{ secrets.AZURE_WEBAPP_NAME_QA }}.azurewebsites.net/swagger-ui/index.html
+      url: https://blue-velvet-qa-jnam.azurewebsites.net/swagger-ui/index.html
     steps:
       - name: Login a Azure
         uses: azure/login@v2

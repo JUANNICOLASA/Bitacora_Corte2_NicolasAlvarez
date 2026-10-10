@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ secrets.AZURE_WEBAPP_NAME_PROD }}.azurewebsites.net/swagger-ui/index.html
+      url: https://blue-velvet-prod-jnam.azurewebsites.net/swagger-ui/index.html
     steps:
       - name: Login a Azure
         uses: azure/login@v2
