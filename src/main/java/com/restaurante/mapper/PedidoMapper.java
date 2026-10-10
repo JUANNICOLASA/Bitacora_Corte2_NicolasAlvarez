@@ -18,6 +18,7 @@ public interface PedidoMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "usuario", ignore = true)
     Pedido toDomain(PedidoRequestDTO dto);
 
     @Mapping(target = "id", ignore = true)

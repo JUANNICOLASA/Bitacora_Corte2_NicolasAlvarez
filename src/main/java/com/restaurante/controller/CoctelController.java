@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,6 +40,7 @@ public class CoctelController {
 
     @Operation(summary = "Listar todos los cocteles")
     @ApiResponse(responseCode = "200", description = "Lista de cocteles")
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER')")
     @GetMapping
     public ResponseEntity<List<CoctelResponseDTO>> listar() {
         return ResponseEntity.ok(coctelMapper.toResponseList(coctelService.listar()));
@@ -48,6 +50,7 @@ public class CoctelController {
     @ApiResponse(responseCode = "200", description = "Coctel encontrado")
     @ApiResponse(responseCode = "404", description = "El coctel no existe",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER')")
     @GetMapping("/{id}")
     public ResponseEntity<CoctelResponseDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(coctelMapper.toResponse(coctelService.obtenerPorId(id)));
@@ -61,6 +64,7 @@ public class CoctelController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "422", description = "Alcoholico sin destilado base o Mocktail con destilado",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CoctelResponseDTO> crear(@Valid @RequestBody CoctelRequestDTO request) {
         Coctel creado = coctelService.crear(coctelMapper.toDomain(request));
@@ -75,6 +79,7 @@ public class CoctelController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "409", description = "Nombre duplicado",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CoctelResponseDTO> actualizar(@PathVariable Long id,
                                                         @Valid @RequestBody CoctelRequestDTO request) {
@@ -88,6 +93,7 @@ public class CoctelController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "404", description = "El coctel no existe",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER')")
     @PatchMapping("/{id}/disponibilidad")
     public ResponseEntity<CoctelResponseDTO> cambiarDisponibilidad(@PathVariable Long id,
                                                                    @Valid @RequestBody DisponibilidadRequestDTO request) {
@@ -101,6 +107,7 @@ public class CoctelController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "409", description = "El coctel tiene comandas registradas",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         coctelService.eliminar(id);

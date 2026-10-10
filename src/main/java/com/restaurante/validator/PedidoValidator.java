@@ -9,12 +9,15 @@ import com.restaurante.model.domain.Pedido;
 import com.restaurante.model.domain.TipoBebida;
 import com.restaurante.util.AccesibilidadUtil;
 import com.restaurante.util.TextoUtil;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PedidoValidator {
 
     public static final int MAX_CAMBIOS_DE_LICOR = 1;
+    private static final String ROL_CLIENTE = "ROLE_CLIENTE";
 
     public void validarCoctelDisponible(Coctel coctel) {
         if (!coctel.estaDisponible()) {
@@ -72,6 +75,14 @@ public class PedidoValidator {
         if (cambios >= MAX_CAMBIOS_DE_LICOR) {
             throw new ReglaNegocioException(
                     "El licor de este coctel ya fue cambiado una vez");
+        }
+    }
+
+    public void validarPropietario(Pedido pedido, Authentication usuario) {
+        boolean esCliente = usuario.getAuthorities().stream()
+                .anyMatch(permiso -> ROL_CLIENTE.equals(permiso.getAuthority()));
+        if (esCliente && !usuario.getName().equals(pedido.getUsuario())) {
+            throw new AccessDeniedException("La comanda " + pedido.getId() + " no pertenece al cliente");
         }
     }
 }

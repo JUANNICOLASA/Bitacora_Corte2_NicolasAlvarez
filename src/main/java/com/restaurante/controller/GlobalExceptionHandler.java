@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -60,6 +61,14 @@ public class GlobalExceptionHandler {
         log.warn("Conflicto de integridad en {}", request.getRequestURI());
         return construir(HttpStatus.CONFLICT, "BV-409",
                 "La operacion entra en conflicto con datos existentes", request, List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> manejarAccesoDenegado(AccessDeniedException ex,
+                                                                  HttpServletRequest request) {
+        log.warn("Acceso denegado a {} {}", request.getMethod(), request.getRequestURI());
+        return construir(HttpStatus.FORBIDDEN, "BV-403",
+                "No tiene permisos para realizar esta accion", request, List.of());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

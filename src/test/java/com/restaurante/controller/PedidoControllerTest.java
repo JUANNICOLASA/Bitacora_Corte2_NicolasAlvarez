@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -56,7 +57,7 @@ class PedidoControllerTest {
 
     @Test
     void crearDevuelve201() throws Exception {
-        when(pedidoService.crear(any(Pedido.class))).thenReturn(pedido);
+        when(pedidoService.crear(any(Pedido.class), any())).thenReturn(pedido);
 
         mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"numeroMesa\":7,\"items\":[{\"idCoctel\":2,\"cantidad\":1,\"destilado\":\"Tanqueray\"}]}"))
@@ -81,7 +82,7 @@ class PedidoControllerTest {
 
     @Test
     void crearConReglaVioladaDevuelve422() throws Exception {
-        when(pedidoService.crear(any(Pedido.class)))
+        when(pedidoService.crear(any(Pedido.class), any()))
                 .thenThrow(new ReglaNegocioException("requiere especificar la marca o tipo exacto de destilado"));
 
         mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +113,7 @@ class PedidoControllerTest {
 
     @Test
     void obtener() throws Exception {
-        when(pedidoService.obtenerPorId(1L)).thenReturn(pedido);
+        when(pedidoService.obtenerPorId(eq(1L), any())).thenReturn(pedido);
 
         mockMvc.perform(get(URL + "/1"))
                 .andExpect(status().isOk())
@@ -121,7 +122,7 @@ class PedidoControllerTest {
 
     @Test
     void cambiarEstado() throws Exception {
-        when(pedidoService.cambiarEstado(1L, EstadoPedido.EN_PREPARACION)).thenReturn(pedido);
+        when(pedidoService.cambiarEstado(eq(1L), eq(EstadoPedido.EN_PREPARACION), any())).thenReturn(pedido);
 
         mockMvc.perform(patch(URL + "/1/estado").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"EN_PREPARACION\"}"))
@@ -137,7 +138,7 @@ class PedidoControllerTest {
 
     @Test
     void cambiarDestilado() throws Exception {
-        when(pedidoService.cambiarDestilado(1L, 1L, "Hendrick's")).thenReturn(pedido);
+        when(pedidoService.cambiarDestilado(eq(1L), eq(1L), eq("Hendrick's"), any())).thenReturn(pedido);
 
         mockMvc.perform(patch(URL + "/1/items/1/destilado").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destilado\":\"Hendrick's\"}"))
@@ -153,7 +154,7 @@ class PedidoControllerTest {
     @Test
     void cancelarEnPreparacionDevuelve422() throws Exception {
         doThrow(new ReglaNegocioException("Solo se puede cancelar en RECIBIDO"))
-                .when(pedidoService).cancelar(2L);
+                .when(pedidoService).cancelar(eq(2L), any());
 
         mockMvc.perform(delete(URL + "/2"))
                 .andExpect(status().isUnprocessableEntity());

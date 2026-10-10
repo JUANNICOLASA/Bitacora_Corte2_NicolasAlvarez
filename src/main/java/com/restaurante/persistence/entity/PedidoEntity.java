@@ -43,6 +43,9 @@ public class PedidoEntity {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(length = 120)
+    private String usuario;
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("id ASC")
     private List<ItemPedidoEntity> items = new ArrayList<>();

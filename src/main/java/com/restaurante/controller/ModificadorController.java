@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +38,7 @@ public class ModificadorController {
 
     @Operation(summary = "Listar modificadores")
     @ApiResponse(responseCode = "200", description = "Lista de modificadores")
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER','MESERO')")
     @GetMapping
     public ResponseEntity<List<ModificadorResponseDTO>> listar() {
         return ResponseEntity.ok(modificadorMapper.toResponseList(modificadorService.listar()));
@@ -46,6 +48,7 @@ public class ModificadorController {
     @ApiResponse(responseCode = "200", description = "Modificador encontrado")
     @ApiResponse(responseCode = "404", description = "El modificador no existe",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER','MESERO')")
     @GetMapping("/{id}")
     public ResponseEntity<ModificadorResponseDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(modificadorMapper.toResponse(modificadorService.obtenerPorId(id)));
@@ -57,6 +60,7 @@ public class ModificadorController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "409", description = "Nombre duplicado",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ModificadorResponseDTO> crear(@Valid @RequestBody ModificadorRequestDTO request) {
         Modificador creado = modificadorService.crear(modificadorMapper.toDomain(request));
@@ -67,6 +71,7 @@ public class ModificadorController {
     @ApiResponse(responseCode = "200", description = "Disponibilidad actualizada")
     @ApiResponse(responseCode = "404", description = "El modificador no existe",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER')")
     @PatchMapping("/{id}/disponibilidad")
     public ResponseEntity<ModificadorResponseDTO> cambiarDisponibilidad(@PathVariable Long id,
                                                                         @Valid @RequestBody DisponibilidadRequestDTO request) {

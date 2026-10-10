@@ -19,6 +19,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -49,9 +51,11 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "422", description = "Agotado en barra, falta el destilado o modificador con alcohol en Mocktail",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('MESERO','CLIENTE')")
     @PostMapping
-    public ResponseEntity<PedidoResponseDTO> crear(@Valid @RequestBody PedidoRequestDTO request) {
-        Pedido creado = pedidoService.crear(pedidoMapper.toDomain(request));
+    public ResponseEntity<PedidoResponseDTO> crear(@Valid @RequestBody PedidoRequestDTO request,
+                                                   Authentication usuario) {
+        Pedido creado = pedidoService.crear(pedidoMapper.toDomain(request), usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toResponse(creado));
     }
 
@@ -59,6 +63,7 @@ public class PedidoController {
     @ApiResponse(responseCode = "200", description = "Lista de comandas")
     @ApiResponse(responseCode = "400", description = "Estado invalido",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER','MESERO')")
     @GetMapping
     public ResponseEntity<List<PedidoResponseDTO>> listar(
             @Parameter(description = "Filtrar por estado")
@@ -69,6 +74,7 @@ public class PedidoController {
 
     @Operation(summary = "Tablero del bartender: comandas activas en orden de llegada")
     @ApiResponse(responseCode = "200", description = "Comandas que no estan ENTREGADAS ni CANCELADAS")
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER')")
     @GetMapping("/activos")
     public ResponseEntity<List<PedidoResponseDTO>> listarActivos() {
         return ResponseEntity.ok(pedidoMapper.toResponseList(pedidoService.listarActivos()));
@@ -78,9 +84,10 @@ public class PedidoController {
     @ApiResponse(responseCode = "200", description = "Comanda encontrada")
     @ApiResponse(responseCode = "404", description = "La comanda no existe",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','BARTENDER','MESERO','CLIENTE')")
     @GetMapping("/{id}")
-    public ResponseEntity<PedidoResponseDTO> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(pedidoMapper.toResponse(pedidoService.obtenerPorId(id)));
+    public ResponseEntity<PedidoResponseDTO> obtener(@PathVariable Long id, Authentication usuario) {
+        return ResponseEntity.ok(pedidoMapper.toResponse(pedidoService.obtenerPorId(id, usuario)));
     }
 
     @Operation(summary = "Avanzar el estado de la comanda en el KDS",
@@ -92,10 +99,13 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "422", description = "Transicion invalida",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasRole('BARTENDER')")
     @PatchMapping("/{id}/estado")
     public ResponseEntity<PedidoResponseDTO> cambiarEstado(@PathVariable Long id,
-                                                           @Valid @RequestBody CambioEstadoRequestDTO request) {
-        return ResponseEntity.ok(pedidoMapper.toResponse(pedidoService.cambiarEstado(id, request.estado())));
+                                                           @Valid @RequestBody CambioEstadoRequestDTO request,
+                                                           Authentication usuario) {
+        Pedido pedido = pedidoService.cambiarEstado(id, request.estado(), usuario);
+        return ResponseEntity.ok(pedidoMapper.toResponse(pedido));
     }
 
     @Operation(summary = "Cambiar el licor de un coctel de la comanda",
@@ -107,11 +117,13 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "422", description = "Ya se cambio una vez, ya esta en preparacion o es Mocktail",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('MESERO','CLIENTE')")
     @PatchMapping("/{id}/items/{idItem}/destilado")
     public ResponseEntity<PedidoResponseDTO> cambiarDestilado(@PathVariable Long id,
                                                               @PathVariable Long idItem,
-                                                              @Valid @RequestBody CambioDestiladoRequestDTO request) {
-        Pedido pedido = pedidoService.cambiarDestilado(id, idItem, request.destilado());
+                                                              @Valid @RequestBody CambioDestiladoRequestDTO request,
+                                                              Authentication usuario) {
+        Pedido pedido = pedidoService.cambiarDestilado(id, idItem, request.destilado(), usuario);
         return ResponseEntity.ok(pedidoMapper.toResponse(pedido));
     }
 
@@ -121,9 +133,10 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @ApiResponse(responseCode = "422", description = "La comanda ya esta en barra",
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @PreAuthorize("hasAnyRole('ADMIN','MESERO')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelar(@PathVariable Long id) {
-        pedidoService.cancelar(id);
+    public ResponseEntity<Void> cancelar(@PathVariable Long id, Authentication usuario) {
+        pedidoService.cancelar(id, usuario);
         return ResponseEntity.noContent().build();
     }
 }

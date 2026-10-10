@@ -3,11 +3,15 @@ package com.restaurante.config;
 import com.restaurante.model.domain.CategoriaCoctel;
 import com.restaurante.model.domain.Coctel;
 import com.restaurante.model.domain.Modificador;
+import com.restaurante.model.domain.Rol;
 import com.restaurante.model.domain.TipoBebida;
+import com.restaurante.model.domain.Usuario;
+import com.restaurante.service.AuthService;
 import com.restaurante.service.CoctelService;
 import com.restaurante.service.ModificadorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -20,9 +24,35 @@ public class DatosIniciales implements CommandLineRunner {
 
     private final CoctelService coctelService;
     private final ModificadorService modificadorService;
+    private final AuthService authService;
+
+    @Value("${usuarios.password-inicial:}")
+    private String passwordInicial;
 
     @Override
     public void run(String... args) {
+        cargarUsuarios();
+        cargarCarta();
+    }
+
+    private void cargarUsuarios() {
+        if (passwordInicial.isBlank()) {
+            log.warn("No se definio USUARIOS_PASSWORD, no se crean los usuarios iniciales");
+            return;
+        }
+        crearUsuario("Administrador", "admin@bluevelvet.com", Rol.ADMIN);
+        crearUsuario("Bartender", "bartender@bluevelvet.com", Rol.BARTENDER);
+        crearUsuario("Mesero", "mesero@bluevelvet.com", Rol.MESERO);
+        crearUsuario("Cliente", "cliente@bluevelvet.com", Rol.CLIENTE);
+    }
+
+    private void crearUsuario(String nombre, String email, Rol rol) {
+        if (!authService.existe(email)) {
+            authService.crear(Usuario.builder().nombre(nombre).email(email).password(passwordInicial).rol(rol).build());
+        }
+    }
+
+    private void cargarCarta() {
         if (!coctelService.listar().isEmpty()) {
             log.info("La carta de Blue Velvet ya tiene datos, no se carga la carta inicial");
             return;

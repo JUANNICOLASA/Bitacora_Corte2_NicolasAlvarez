@@ -10,6 +10,12 @@ import com.restaurante.model.domain.TipoBebida;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -139,5 +145,31 @@ class PedidoValidatorTest {
         assertThatThrownBy(() -> validator.validarCambioDeLicor(pedido, item))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("Mocktail");
+    }
+
+    private Authentication usuario(String email, String rol) {
+        return new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_" + rol)));
+    }
+
+    @Test
+    void clientePuedeVerSuPropiaComanda() {
+        Pedido pedido = Pedido.builder().id(1L).usuario("cliente@bluevelvet.com").build();
+        assertThatCode(() -> validator.validarPropietario(pedido, usuario("cliente@bluevelvet.com", "CLIENTE")))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void clienteNoPuedeVerComandaDeOtro() {
+        Pedido pedido = Pedido.builder().id(1L).usuario("mesero@bluevelvet.com").build();
+        Authentication cliente = usuario("cliente@bluevelvet.com", "CLIENTE");
+        assertThatThrownBy(() -> validator.validarPropietario(pedido, cliente))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void personalPuedeVerCualquierComanda() {
+        Pedido pedido = Pedido.builder().id(1L).usuario("cliente@bluevelvet.com").build();
+        assertThatCode(() -> validator.validarPropietario(pedido, usuario("mesero@bluevelvet.com", "MESERO")))
+                .doesNotThrowAnyException();
     }
 }

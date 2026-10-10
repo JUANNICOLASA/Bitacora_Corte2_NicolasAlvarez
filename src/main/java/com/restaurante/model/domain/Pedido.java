@@ -21,6 +21,7 @@ public class Pedido {
     private List<ItemPedido> items = new ArrayList<>();
     private EstadoPedido estado;
     private LocalDateTime fechaCreacion;
+    private String usuario;
 
     public boolean puedeModificarse() {
         return estado == EstadoPedido.RECIBIDO;
