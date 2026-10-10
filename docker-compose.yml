@@ -1,0 +1,67 @@
+services:
+  api:
+    build: .
+    image: juanamunoz/blue-velvet-api:latest
+    container_name: blue-velvet-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/blue_velvet
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/blue_velvet?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      USUARIOS_PASSWORD: ${USUARIOS_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - blue-velvet-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: blue-velvet-postgres
+    environment:
+      POSTGRES_DB: blue_velvet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d blue_velvet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blue-velvet-net
+
+  mongo:
+    image: mongo:7
+    container_name: blue-velvet-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blue-velvet-net
+
+volumes:
+  postgres-data:
+  mongo-data:
+
+networks:
+  blue-velvet-net:
+    driver: bridge
