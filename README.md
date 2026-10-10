@@ -581,6 +581,8 @@ La imagen está publicada en [hub.docker.com/r/juanamunoz/blue-velvet-api](https
 
 **Imagen publicada en Docker Hub**
 
+![Pagina de Docker Hub](docs/evidencias/dockerhub.png)
+
 ![Imagen en Docker Hub](docs/evidencias/docker-imagen.png)
 
 ---
@@ -648,6 +650,22 @@ El despliegue a QA es automático (línea sólida) y el de producción requiere 
 **API desplegada en Azure QA**
 
 ![Swagger en QA](docs/evidencias/cicd-qa-swagger.png)
+
+**Aprobación manual del despliegue a PROD**
+
+![Aprobacion PROD](docs/evidencias/cicd-aprobacion-prod.png)
+
+**Pipeline de PROD en verde con la aprobación registrada**
+
+![Pipeline PROD](docs/evidencias/cicd-pipeline-prod.png)
+
+**App Service de producción en Azure con el contenedor `juanamunoz/blue-velvet-api:1.0.0`**
+
+![App Service en Azure](docs/evidencias/azure-app-service.png)
+
+**API desplegada en Azure PROD**
+
+![Swagger en PROD](docs/evidencias/cicd-prod-swagger.png)
 
 ---
 
