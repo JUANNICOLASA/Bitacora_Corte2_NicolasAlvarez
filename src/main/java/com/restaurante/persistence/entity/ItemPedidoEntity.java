@@ -22,6 +22,8 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+// S09 - Normalizacion: el item es su propia tabla (1FN, nada de listas en una columna) con FK a pedido y a coctel.
+// nombre_coctel y precio_unitario se congelan en el item: si despues cambia el precio del coctel el pedido no cambia.
 @Entity
 @Table(name = "item_pedido")
 @Getter
@@ -60,6 +62,8 @@ public class ItemPedidoEntity {
     @Column(name = "cambios_de_licor", nullable = false)
     private Integer cambiosDeLicor;
 
+    // @OneToMany bidireccional (mappedBy). Composicion: cascade ALL + orphanRemoval, si se borra el item
+    // se borran sus modificadores
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("id ASC")
     private List<ItemModificadorEntity> modificadores = new ArrayList<>();

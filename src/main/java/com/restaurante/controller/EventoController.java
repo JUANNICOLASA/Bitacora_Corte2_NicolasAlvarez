@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// S09 - Este controller consulta datos que viven en MongoDB. Al controller no le importa de donde
+// vienen los datos, eso lo resuelve el service + repository.
 @Tag(name = "Eventos", description = "Historial de eventos de las comandas guardado en MongoDB")
 @RestController
 @RequestMapping("/api/v1/eventos")
@@ -32,6 +34,7 @@ public class EventoController {
     @GetMapping
     public ResponseEntity<List<EventoComandaResponseDTO>> listar(
             @Parameter(description = "Filtrar por id de la comanda")
+            // S07 - Query param para filtrar (no para identificar el recurso): /api/v1/eventos?idPedido=1
             @RequestParam(required = false) Long idPedido) {
         return ResponseEntity.ok(eventoComandaMapper.toResponseList(eventoComandaService.listar(idPedido)));
     }

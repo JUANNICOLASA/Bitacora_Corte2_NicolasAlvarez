@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+// S08 - Un service puede depender de otros services, SIEMPRE por su interfaz (CoctelService, ModificadorService),
+// para reutilizar la logica en vez de duplicarla. Cuidado con dependencias circulares (A -> B -> A).
+// S09 - Persistencia hibrida: la comanda se guarda en PostgreSQL y cada cambio queda como evento en MongoDB.
 @Slf4j
 @Service
 @Transactional
@@ -44,6 +47,7 @@ public class PedidoServiceImpl implements PedidoService {
     @Override
     public Pedido crear(Pedido pedido, Authentication usuario) {
         List<ItemPedido> solicitados = pedido.getItems() == null ? List.of() : pedido.getItems();
+        // Stream: cada item se completa (nombre, tipo, precio congelado) y se valida
         List<ItemPedido> items = solicitados.stream()
                 .map(this::completarItem)
                 .toList();
@@ -54,6 +58,7 @@ public class PedidoServiceImpl implements PedidoService {
         pedido.setUsuario(usuario.getName());
         PedidoEntity guardado = pedidoRepository.save(pedidoEntityMapper.toEntity(pedido));
         log.info("Comanda creada: id={}, mesa={}, items={}", guardado.getId(), guardado.getNumeroMesa(), items.size());
+        // Auditoria del cambio en Mongo (S10 OWASP - Security Logging and Monitoring)
         eventoComandaService.registrar(guardado.getId(), TipoEvento.CREADA, guardado.getEstado(),
                 "Comanda creada para la mesa " + guardado.getNumeroMesa() + " con " + items.size() + " items",
                 usuario.getName());
@@ -122,6 +127,7 @@ public class PedidoServiceImpl implements PedidoService {
     public Pedido cambiarEstado(Long id, EstadoPedido nuevoEstado, Authentication usuario) {
         PedidoEntity entity = buscarEntidad(id);
         EstadoPedido anterior = entity.getEstado();
+        // Regla de negocio: RECIBIDO -> EN_PREPARACION -> LISTO -> ENTREGADO. Transicion invalida -> 422
         pedidoValidator.validarTransicion(anterior, nuevoEstado);
         log.info("Comanda id={} cambia de {} a {}", id, anterior, nuevoEstado);
         entity.setEstado(nuevoEstado);

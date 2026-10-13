@@ -16,6 +16,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+// S07 - @Component: bean generico de Spring. CommandLineRunner se ejecuta cuando arranca la aplicacion.
+// S08 - @Profile("!test"): solo corre cuando NO esta activo el perfil test (perfiles por ambiente).
+// S10 - La contrasena de los usuarios iniciales viene de una variable de entorno, nunca quemada en el codigo.
 @Slf4j
 @Component
 @Profile("!test")
@@ -37,6 +40,7 @@ public class DatosIniciales implements CommandLineRunner {
 
     private void cargarUsuarios() {
         if (passwordInicial.isBlank()) {
+            // S08 - Log WARN: situacion rara que no rompe la aplicacion
             log.warn("No se definio USUARIOS_PASSWORD, no se crean los usuarios iniciales");
             return;
         }

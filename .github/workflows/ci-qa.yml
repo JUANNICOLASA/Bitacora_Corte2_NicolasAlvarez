@@ -1,3 +1,9 @@
+# S10 - CI/CD con GitHub Actions. Workflow = este archivo .yml dentro de .github/workflows
+# Events (on): push a master/develop o pull request a master.
+# Jobs: test -> build-and-push -> deploy-qa (needs define el orden). Steps = pasos dentro de cada job.
+# Actions (uses:) = scripts reutilizables.
+# CI: compila y corre las pruebas en cada commit. CD: publica la imagen en Docker Hub y despliega a QA en Azure.
+# S08 - Ramas: develop = integracion, master = version estable.
 name: CI - Build, Test y Deploy QA
 
 on:
@@ -42,6 +48,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Secrets: ${{ secrets.NOMBRE }}, se guardan en Settings -> Secrets and variables -> Actions.
+      # Nunca en el codigo, en la imagen ni impresos en los logs.
       - name: Login a Docker Hub
         uses: docker/login-action@v3
         with:
@@ -73,6 +81,7 @@ jobs:
     name: Desplegar a QA
     needs: build-and-push
     runs-on: ubuntu-latest
+    # Ambiente QA: homologo a produccion en configuracion, es donde prueba el tester
     environment:
       name: qa
       url: https://blue-velvet-qa-jnam.azurewebsites.net/swagger-ui/index.html

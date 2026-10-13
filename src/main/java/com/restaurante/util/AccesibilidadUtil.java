@@ -1,5 +1,7 @@
 package com.restaurante.util;
 
+// S07 - Utilidad: clase final con metodos estaticos, sin estado, sin logica de negocio ni persistencia.
+// No se inyecta. Constructor privado para que nadie la instancie.
 public final class AccesibilidadUtil {
 
     public static final String ETIQUETA_AGOTADO = "AGOTADO EN BARRA";

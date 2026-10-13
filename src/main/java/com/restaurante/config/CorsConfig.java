@@ -9,6 +9,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+// S10 - CORS: el navegador bloquea las peticiones desde otro dominio (ej. el front en localhost:5173)
+// a menos que el servidor responda con las cabeceras Access-Control-Allow-*.
+// Antes de la peticion real el navegador manda una pre solicitud (preflight OPTIONS).
+// Aqui se habilita a nivel global; a nivel de controlador seria con @CrossOrigin.
+// S08 - Los origenes salen de la propiedad cors.origenes leida con @Value.
 @Configuration
 public class CorsConfig {
 

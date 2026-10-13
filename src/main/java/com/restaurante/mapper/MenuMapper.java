@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
+// Mapper con expresiones y metodos default: arma la vista de la carta (etiqueta + icono, no solo color)
 @Mapper(componentModel = "spring", imports = AccesibilidadUtil.class)
 public interface MenuMapper {
 

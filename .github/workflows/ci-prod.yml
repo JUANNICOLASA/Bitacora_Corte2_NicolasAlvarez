@@ -1,3 +1,6 @@
+# S10 - CD a produccion: solo se dispara al crear un tag de version (ej. v1.0.0).
+# El environment production tiene aprobacion manual -> Continuous Delivery (siempre listo, despliegue aprobado).
+# Cada ambiente tiene sus propias credenciales (secrets _QA y _PROD).
 name: CD - Deploy PROD
 
 on:
@@ -39,6 +42,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
+            # La imagen se etiqueta con la version, asi se puede volver a una version anterior si algo falla
             type=semver,pattern={{version}}
             type=raw,value=latest
 

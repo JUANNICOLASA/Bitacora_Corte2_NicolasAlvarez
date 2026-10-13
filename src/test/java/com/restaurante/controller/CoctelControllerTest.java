@@ -34,6 +34,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// Prueba del controller con MockMvc standalone: se simula la peticion HTTP y se revisa el status y el JSON.
+// El service es un mock y se registra el GlobalExceptionHandler para probar los errores.
 @ExtendWith(MockitoExtension.class)
 class CoctelControllerTest {
 

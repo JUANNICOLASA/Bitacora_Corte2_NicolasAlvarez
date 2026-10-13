@@ -19,16 +19,22 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// S08 - Error Handler, "el gerente del restaurante": intercepta las excepciones de todos los controllers
+// y responde siempre con el mismo formato (ErrorResponseDTO) y el codigo HTTP correcto.
+// Asi no hay que llenar cada controller de try/catch.
+// @RestControllerAdvice = @ControllerAdvice + @ResponseBody
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Excepciones propias de negocio: cada una ya trae su status (404, 409, 422, 429...) y su codigo interno
     @ExceptionHandler(BlueVelvetException.class)
     public ResponseEntity<ErrorResponseDTO> manejarNegocio(BlueVelvetException ex, HttpServletRequest request) {
         log.warn("Error de negocio {}: {}", ex.getCodigo(), ex.getMessage());
         return construir(ex.getStatus(), ex.getCodigo(), ex.getMessage(), request, List.of());
     }
 
+    // Validaciones de input del DTO (@Valid) que fallaron -> 400 con el detalle de cada campo (armado con stream)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDTO> manejarValidacion(MethodArgumentNotValidException ex,
                                                               HttpServletRequest request) {
@@ -40,6 +46,7 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, "BV-400", "La peticion tiene datos invalidos", request, detalles);
     }
 
+    // Body vacio o JSON mal formado -> 400
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponseDTO> manejarCuerpoInvalido(HttpMessageNotReadableException ex,
                                                                   HttpServletRequest request) {
@@ -55,6 +62,7 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, "BV-400", mensaje, request, List.of());
     }
 
+    // S09 - Se violo una restriccion de la BD (unique, llave foranea) -> 409
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponseDTO> manejarIntegridad(DataIntegrityViolationException ex,
                                                               HttpServletRequest request) {
@@ -84,6 +92,10 @@ public class GlobalExceptionHandler {
                 "El metodo " + ex.getMethod() + " no esta permitido en esta ruta", request, List.of());
     }
 
+    // Handler generico al final: Spring evalua del mas especifico al mas general,
+    // si este fuera el unico capturaria todo antes que los especificos.
+    // S10 - OWASP Security Misconfiguration: al cliente no se le muestra el stacktrace,
+    // solo un mensaje generico. El detalle queda en el log nivel ERROR.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> manejarGeneral(Exception ex, HttpServletRequest request) {
         log.error("Error inesperado en {}", request.getRequestURI(), ex);

@@ -13,6 +13,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+// Reglas de negocio de la comanda. Cada regla rota lanza ReglaNegocioException -> 422
 @Component
 public class PedidoValidator {
 
@@ -49,6 +50,8 @@ public class PedidoValidator {
         }
     }
 
+    // S07 - Cobertura de ramas: para cubrir este metodo toca probar cada if en true y en false
+    // (cancelar desde RECIBIDO, cancelar desde otro estado, transicion valida y transicion invalida)
     public void validarTransicion(EstadoPedido actual, EstadoPedido nuevo) {
         if (nuevo == EstadoPedido.CANCELADO) {
             if (actual != EstadoPedido.RECIBIDO) {
@@ -78,6 +81,7 @@ public class PedidoValidator {
         }
     }
 
+    // S10 - OWASP Broken Access Control: un CLIENTE solo puede ver/modificar SUS comandas aunque adivine otro id
     public void validarPropietario(Pedido pedido, Authentication usuario) {
         boolean esCliente = usuario.getAuthorities().stream()
                 .anyMatch(permiso -> ROL_CLIENTE.equals(permiso.getAuthority()));

@@ -1,3 +1,4 @@
+# S10 - Lo que no entra a la imagen: git, target, docs y sobre todo .env y certificados (*.p12)
 .git
 .github
 .gitignore

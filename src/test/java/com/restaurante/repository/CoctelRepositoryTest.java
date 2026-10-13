@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// S09 - @DataJpaTest: levanta solo la capa JPA con H2 en memoria para probar los query methods
 @DataJpaTest
 class CoctelRepositoryTest {
 

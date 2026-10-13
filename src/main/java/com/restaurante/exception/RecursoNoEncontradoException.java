@@ -2,6 +2,7 @@ package com.restaurante.exception;
 
 import org.springframework.http.HttpStatus;
 
+// 404 Not Found: el recurso no existe
 public class RecursoNoEncontradoException extends BlueVelvetException {
 
     public RecursoNoEncontradoException(String recurso, Object id) {

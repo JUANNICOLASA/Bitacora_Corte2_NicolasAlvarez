@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// S09 - Composicion Pedido -> ItemPedido: los items no existen sin su pedido (cascade ALL, orphanRemoval).
+// Agregacion: Item -> Coctel, el coctel sigue existiendo aunque se borre el pedido.
+// Indice en estado porque el KDS filtra las comandas por estado.
 @Entity
 @Table(name = "pedido", indexes = @Index(name = "idx_pedido_estado", columnList = "estado"))
 @Getter
@@ -46,6 +49,8 @@ public class PedidoEntity {
     @Column(length = 120)
     private String usuario;
 
+    // Siempre LAZY. Para evitar el problema 1+N el repository usa @EntityGraph y JOIN FETCH.
+    // La relacion es bilateral: se sincronizan los dos lados en PedidoEntityMapper.enlazarRelaciones
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("id ASC")
     private List<ItemPedidoEntity> items = new ArrayList<>();

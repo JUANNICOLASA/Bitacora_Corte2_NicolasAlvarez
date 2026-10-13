@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+// El precioUnitario se congela al crear el pedido, no sigue el precio actual del coctel
 @Data
 @Builder
 @NoArgsConstructor

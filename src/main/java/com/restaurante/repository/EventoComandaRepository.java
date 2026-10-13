@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+// S09 - MongoRepository<Documento, TipoDelId>: mismo patron que JPA pero para Mongo. 1 repositorio por documento.
 @Repository
 public interface EventoComandaRepository extends MongoRepository<EventoComandaDocument, String> {
 

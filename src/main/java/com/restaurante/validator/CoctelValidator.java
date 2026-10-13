@@ -9,6 +9,9 @@ import com.restaurante.util.TextoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+// S07/S08 - Validator: verifica reglas de NEGOCIO antes de procesar (las de formato van en el DTO con Bean Validation).
+// Se saca del service para que cada clase tenga una sola responsabilidad. Es @Component porque se inyecta.
+// S09 - Ya no recibe la lista completa en memoria: usa el repository y la BD hace la busqueda.
 @Component
 @RequiredArgsConstructor
 public class CoctelValidator {

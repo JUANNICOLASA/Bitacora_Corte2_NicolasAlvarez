@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// S08 - Pedido 1 -> * ItemPedido. calcularTotal suma los subtotales con un stream
 @Data
 @Builder
 @NoArgsConstructor

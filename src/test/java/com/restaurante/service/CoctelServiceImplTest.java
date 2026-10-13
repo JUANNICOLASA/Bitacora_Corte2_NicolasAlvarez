@@ -33,6 +33,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+// S08 - Pruebas unitarias del service con JUnit 5 + Mockito: no dependen de la BD ni del controller.
+// @Mock crea un doble vacio de una dependencia, @InjectMocks crea la clase REAL bajo prueba (SUT) e inyecta los mocks.
+// @Spy usa el mapper real pero deja verificarlo.
+// Escenarios: happy path, no encontrado, duplicado, estado invalido y lista vacia.
 @ExtendWith(MockitoExtension.class)
 class CoctelServiceImplTest {
 
@@ -76,6 +80,7 @@ class CoctelServiceImplTest {
 
     @Test
     void crearGuardaEnBaseDeDatosYDevuelveElId() {
+        // when(...).thenReturn/thenAnswer: se le dice al mock que responder (Arrange - Act - Assert)
         when(coctelRepository.save(any(CoctelEntity.class))).thenAnswer(invocacion -> {
             CoctelEntity guardado = invocacion.getArgument(0);
             guardado.setId(1L);
@@ -87,6 +92,7 @@ class CoctelServiceImplTest {
         assertThat(creado.getId()).isEqualTo(1L);
         assertThat(creado.getNombre()).isEqualTo("Negroni");
         assertThat(creado.getDisponible()).isTrue();
+        // verify: comprueba que el mock SI fue llamado (times(1) por defecto). never() comprueba que no se llamo
         verify(coctelValidator).validarNombreUnico(any(), isNull());
     }
 

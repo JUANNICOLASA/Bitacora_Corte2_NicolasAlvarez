@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// S09 - Service sobre MongoDB. La logica es la misma que con JPA, solo cambia de donde vienen los datos
+// (la "nevera" en vez de la "alacena"). El DocumentMapper traduce dominio <-> documento,
+// el dominio no sabe que el almacenamiento es Mongo.
 @Slf4j
 @Service
 @RequiredArgsConstructor

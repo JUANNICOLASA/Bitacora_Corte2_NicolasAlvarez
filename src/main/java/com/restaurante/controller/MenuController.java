@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// S08 - Menu vs Coctel: es la misma informacion pero con distinta semantica. El menu es lo que ve el cliente
+// (publico, sin token) y /cocteles es lo que administra el ADMIN. Se reutiliza el mismo servicio
+// con distintos endpoints, rutas y validaciones.
 @Tag(name = "Menu", description = "Carta digital sincronizada con el inventario de barra")
 @SecurityRequirements
 @RestController
@@ -32,6 +35,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MenuController {
 
+    // Un controller puede usar varios services (siempre por la interfaz)
     private final CoctelService coctelService;
     private final ModificadorService modificadorService;
     private final MenuMapper menuMapper;

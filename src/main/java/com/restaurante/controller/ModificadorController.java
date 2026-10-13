@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// Mismo patron por capas: controller -> service (interfaz) -> repository, con mappers en medio
 @Tag(name = "Modificadores", description = "Adiciones para personalizar los cocteles")
 @RestController
 @RequestMapping("/api/v1/modificadores")

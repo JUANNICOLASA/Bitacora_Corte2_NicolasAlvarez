@@ -16,6 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+// S07 - Service = "la cocina": tiene la logica de negocio, valida las reglas del dominio y llama al Repository.
+// No conoce HTTP (aqui no hay ResponseEntity ni codigos de estado).
+// S08 - @Slf4j (Lombok) crea la variable log. INFO = flujo normal, WARN = algo raro, ERROR = fallo, DEBUG = detalle.
+// S09 - @Transactional: cada metodo es una transaccion ACID (Atomicidad, Consistencia, Aislamiento, Durabilidad):
+// o se hace todo o se revierte todo. readOnly = true en las consultas.
 @Slf4j
 @Service
 @Transactional
@@ -24,6 +29,7 @@ public class CoctelServiceImpl implements CoctelService {
 
     private static final String RECURSO = "Coctel";
 
+    // Inyeccion por constructor (IoC): repository, mapper OUT (dominio <-> entidad) y validator
     private final CoctelRepository coctelRepository;
     private final PedidoRepository pedidoRepository;
     private final CoctelEntityMapper coctelEntityMapper;
@@ -32,6 +38,7 @@ public class CoctelServiceImpl implements CoctelService {
     @Override
     @Transactional(readOnly = true)
     public List<Coctel> listar() {
+        // S08 - Streams: cada entidad se transforma a dominio con map y se recoge con toList()
         return coctelRepository.findAllByOrderByIdAsc().stream()
                 .map(coctelEntityMapper::toDomain)
                 .toList();
@@ -61,6 +68,7 @@ public class CoctelServiceImpl implements CoctelService {
 
     @Override
     public Coctel crear(Coctel coctel) {
+        // Validaciones de NEGOCIO en el service (las de input ya se hicieron en el DTO). Primero input, luego negocio
         coctelValidator.validarCoctel(coctel);
         coctelValidator.validarNombreUnico(coctel.getNombre(), null);
         coctel.setId(null);
@@ -68,6 +76,7 @@ public class CoctelServiceImpl implements CoctelService {
         if (coctel.getDisponible() == null) {
             coctel.setDisponible(true);
         }
+        // dominio -> entidad -> save (la BD asigna el id) -> entidad -> dominio
         CoctelEntity guardado = coctelRepository.save(coctelEntityMapper.toEntity(coctel));
         log.info("Coctel creado: id={}, nombre={}", guardado.getId(), guardado.getNombre());
         return coctelEntityMapper.toDomain(guardado);
@@ -100,6 +109,7 @@ public class CoctelServiceImpl implements CoctelService {
     @Override
     public void eliminar(Long id) {
         buscarEntidad(id);
+        // Regla de negocio: no se elimina un coctel con comandas, se lanza excepcion propia -> 409
         if (pedidoRepository.existsByItemsCoctelId(id)) {
             throw new RecursoEnUsoException(
                     "El coctel tiene comandas registradas. Marquelo como agotado en lugar de eliminarlo");
@@ -109,6 +119,7 @@ public class CoctelServiceImpl implements CoctelService {
     }
 
     private CoctelEntity buscarEntidad(Long id) {
+        // No existe -> RecursoNoEncontradoException -> el GlobalExceptionHandler responde 404
         return coctelRepository.findById(id).orElseThrow(() -> {
             log.warn("Coctel no encontrado: id={}", id);
             return new RecursoNoEncontradoException(RECURSO, id);

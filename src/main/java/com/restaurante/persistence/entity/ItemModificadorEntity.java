@@ -13,6 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// S09 - Entidad intermedia en lugar de @ManyToMany entre item y modificador (recomendado en sistemas complejos).
+// Ademas guarda el precio_extra congelado al momento del pedido.
 @Entity
 @Table(name = "item_modificador")
 @Getter
@@ -24,6 +26,7 @@ public class ItemModificadorEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // @ManyToOne: muchas filas de item_modificador apuntan a un solo item. Fetch LAZY: carga solo cuando se usa
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_item", nullable = false)
     private ItemPedidoEntity item;

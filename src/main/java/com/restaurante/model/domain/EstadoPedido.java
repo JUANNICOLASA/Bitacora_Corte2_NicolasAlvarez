@@ -1,5 +1,7 @@
 package com.restaurante.model.domain;
 
+// S07 - Enumeracion: conjunto fijo de constantes (estados, roles, categorias).
+// Aqui ademas define el flujo del pedido en el KDS.
 public enum EstadoPedido {
     RECIBIDO,
     EN_PREPARACION,

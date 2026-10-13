@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// S08 - Respuesta uniforme de error: status, codigo interno, mensaje, ruta, fecha y detalles
 @Schema(description = "Respuesta uniforme de error")
 public record ErrorResponseDTO(
         @Schema(example = "422") int status,

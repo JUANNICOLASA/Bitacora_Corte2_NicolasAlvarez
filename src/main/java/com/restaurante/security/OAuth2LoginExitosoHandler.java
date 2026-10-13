@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+// S10 - OAuth 2: el usuario inicia sesion con Google, Google le da un authorization code a la app,
+// Spring lo canjea por un access token y obtiene los datos del usuario.
+// Aqui ese login se convierte en nuestro propio JWT. La app nunca conoce la contrasena de Google.
 @Slf4j
 @Component
 @RequiredArgsConstructor

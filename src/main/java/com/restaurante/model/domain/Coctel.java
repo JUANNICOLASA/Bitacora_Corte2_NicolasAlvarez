@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// S07 - Entidad de negocio (objeto de dominio): tiene datos Y comportamiento (esMocktail, estaDisponible).
+// No depende de como se guarda (no tiene @Entity ni @Column). Vive en model/domain.
+// S08 - Lombok: @Data (getters, setters, equals, hashCode, toString), @Builder y constructores.
 @Data
 @Builder
 @NoArgsConstructor

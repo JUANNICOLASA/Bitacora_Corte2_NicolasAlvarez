@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- S07 - Maven + Spring Boot parent: maneja las versiones de las dependencias (BOM) -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -26,6 +27,7 @@
         <springdoc.version>2.8.9</springdoc.version>
         <jacoco.version>0.8.14</jacoco.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <!-- S10 - Analisis de calidad con SonarQube, usa el reporte de cobertura de Jacoco -->
         <sonar.projectKey>blue-velvet-api</sonar.projectKey>
         <sonar.projectName>Blue Velvet API</sonar.projectName>
         <sonar.host.url>http://localhost:9000</sonar.host.url>
@@ -34,30 +36,37 @@
     </properties>
 
     <dependencies>
+        <!-- S07 - API REST (Spring MVC + Tomcat embebido) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- S08 - Bean Validation para los DTOs (@NotBlank, @Valid...) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- S09 - Persistencia relacional con JPA / Hibernate (PostgreSQL) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+        <!-- S09 - Persistencia no relacional (MongoDB) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
+        <!-- S10 - Spring Security (autenticacion y autorizacion) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!-- S10 - Login con OAuth2 (Google) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
+        <!-- S10 - JWT con jjwt (api + impl + jackson) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -75,6 +84,7 @@
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- Driver de PostgreSQL. H2 solo se usa en las pruebas -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -85,21 +95,25 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- S08 - Swagger UI / OpenAPI -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
         </dependency>
+        <!-- S07/S08 - Lombok: getters, setters, builders, @Slf4j, @RequiredArgsConstructor -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- S08 - MapStruct para los mappers -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
+        <!-- Pruebas: JUnit 5 + Mockito + AssertJ + MockMvc -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -123,6 +137,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <!-- ORDEN IMPORTANTE: lombok -> lombok-mapstruct-binding -> mapstruct-processor -->
+                    <!-- (MapStruct necesita los getters/setters que genera Lombok) -->
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -157,6 +173,9 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- S07 - Jacoco: reporte de cobertura en target/site/jacoco (lineas, ramas, metodos). -->
+            <!-- Tipos de cobertura: lineas, ramas (if/else), funciones, condiciones, caminos y ciclos. -->
+            <!-- Goals prepare-agent y report (fase test). -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

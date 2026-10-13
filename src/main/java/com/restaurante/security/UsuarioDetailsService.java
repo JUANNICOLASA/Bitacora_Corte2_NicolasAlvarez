@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+// S10 - UserDetailsService: Spring Security lo usa en el login para cargar el usuario de la BD
+// y comparar la contrasena enviada contra el hash BCrypt guardado.
 @Service
 @RequiredArgsConstructor
 public class UsuarioDetailsService implements UserDetailsService {

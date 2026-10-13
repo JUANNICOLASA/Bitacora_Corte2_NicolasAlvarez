@@ -33,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// S08 - Un controller por dominio: Pedidos (comandas) y tablero del bartender (KDS).
+// Rutas jerarquicas padre-hijo: /pedidos/{id}/items/{idItem}/destilado
 @Tag(name = "Pedidos", description = "Comandas y tablero del bartender (KDS)")
 @RestController
 @RequestMapping("/api/v1/pedidos")
@@ -53,6 +55,7 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
     @PreAuthorize("hasAnyRole('MESERO','CLIENTE')")
     @PostMapping
+    // S10 - Authentication lo inyecta Spring Security con el usuario que viene en el token JWT
     public ResponseEntity<PedidoResponseDTO> crear(@Valid @RequestBody PedidoRequestDTO request,
                                                    Authentication usuario) {
         Pedido creado = pedidoService.crear(pedidoMapper.toDomain(request), usuario);
@@ -90,6 +93,8 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoMapper.toResponse(pedidoService.obtenerPorId(id, usuario)));
     }
 
+    // PATCH del estado. Transicion invalida -> 422: el recurso existe pero la regla de negocio no lo permite
+    // (404 seria que la comanda no existe)
     @Operation(summary = "Avanzar el estado de la comanda en el KDS",
             description = "RECIBIDO -> EN_PREPARACION -> LISTO -> ENTREGADO")
     @ApiResponse(responseCode = "200", description = "Estado actualizado")
@@ -127,6 +132,7 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoMapper.toResponse(pedido));
     }
 
+    // DELETE logico: la comanda no se borra de la BD, pasa a estado CANCELADO
     @Operation(summary = "Cancelar una comanda", description = "Solo si esta en RECIBIDO")
     @ApiResponse(responseCode = "204", description = "Comanda cancelada")
     @ApiResponse(responseCode = "404", description = "La comanda no existe",

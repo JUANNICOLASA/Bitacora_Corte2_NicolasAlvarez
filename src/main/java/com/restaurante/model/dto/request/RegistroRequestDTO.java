@@ -23,6 +23,7 @@ public record RegistroRequestDTO(
         @Schema(example = "Velvet2026*")
         @NotBlank(message = "La contrasena es obligatoria")
         @Size(min = 8, max = 64, message = "La contrasena debe tener entre 8 y 64 caracteres")
+        // S10 - Contrasena fuerte (OWASP Identification and Authentication Failures)
         @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$",
                 message = "La contrasena debe tener mayuscula, minuscula, numero y caracter especial")
         String password

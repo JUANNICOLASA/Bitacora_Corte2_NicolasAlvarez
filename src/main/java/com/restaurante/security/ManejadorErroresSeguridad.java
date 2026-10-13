@@ -18,6 +18,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// S10 - Los errores de seguridad pasan en los filtros, ANTES de llegar al controller, por eso el
+// GlobalExceptionHandler no los alcanza a ver. Esta clase escribe el 401/403 con el mismo ErrorResponseDTO.
+// commence -> 401 no autenticado (quien eres?) | handle -> 403 autenticado pero sin permiso (que puedes hacer?)
 @Slf4j
 @Component
 @RequiredArgsConstructor

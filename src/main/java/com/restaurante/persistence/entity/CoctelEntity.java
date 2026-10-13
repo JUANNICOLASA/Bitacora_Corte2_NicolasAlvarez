@@ -18,6 +18,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
+// S09 - Entidad JPA: representa la TABLA coctel en PostgreSQL. Solo persistencia, sin logica de negocio
+// (la logica esta en model/domain/Coctel). Si se mezclan, un cambio de esquema afecta el negocio.
+// Indices en categoria y disponible porque la carta filtra por esas columnas. Un indice acelera las
+// lecturas pero ocupa espacio y se tiene que actualizar en cada insert/update/delete.
 @Entity
 @Table(name = "coctel", indexes = {
         @Index(name = "idx_coctel_categoria", columnList = "categoria"),
@@ -29,6 +33,8 @@ import java.time.LocalDateTime;
 public class CoctelEntity {
 
     @Id
+    // S09 - El id lo asigna la BD (IDENTITY) y queda disponible despues del save().
+    // Long: tabla interna con muchas FK y rapida en joins (no se usa UUID porque no es un id publico sensible)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -41,6 +47,7 @@ public class CoctelEntity {
     @Column(nullable = false)
     private Double precio;
 
+    // Enum guardado como texto y no como numero, asi no se dana si se reordena el enum
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private CategoriaCoctel categoria;

@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// S10 - Tabla de usuarios: password guarda el HASH BCrypt, nunca la contrasena real. email es unique.
 @Entity
 @Table(name = "usuario")
 @Getter

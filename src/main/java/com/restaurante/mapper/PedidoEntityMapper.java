@@ -64,6 +64,8 @@ public interface PedidoEntityMapper {
                 .build();
     }
 
+    // S09 - Relacion bilateral: hay que sincronizar los dos lados (item.pedido y pedido.items),
+    // si no la llave foranea queda en null
     @AfterMapping
     default void enlazarRelaciones(@MappingTarget PedidoEntity pedido) {
         if (pedido.getItems() == null) {

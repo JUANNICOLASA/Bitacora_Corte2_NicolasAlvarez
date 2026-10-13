@@ -12,6 +12,11 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+// S10 - JWT (JSON Web Token) = Header.Payload.Signature
+//  - Header: tipo de token y algoritmo de firma (HS256)
+//  - Payload: claims NO sensibles (sub = email, rol, iat, exp). Nunca la contrasena, el payload es solo Base64
+//  - Signature: firma HMAC con la clave secreta -> INTEGRIDAD: si alguien cambia el payload la firma ya no cuadra
+// El secreto viene de la variable de entorno JWT_SECRET (Base64, minimo 256 bits), nunca del repositorio.
 @Slf4j
 @Component
 public class JwtUtil {
@@ -32,6 +37,7 @@ public class JwtUtil {
                 .subject(email)
                 .claim(CLAIM_ROL, rol)
                 .issuedAt(ahora)
+                // TTL del token (jwt.expiration-ms, por defecto 1 hora)
                 .expiration(new Date(ahora.getTime() + expiracionMs))
                 .signWith(clave)
                 .compact();
@@ -45,6 +51,7 @@ public class JwtUtil {
                 .getPayload();
     }
 
+    // Token vencido, mal firmado o alterado -> false y la peticion queda sin autenticar (401)
     public boolean esValido(String token) {
         try {
             extraerClaims(token);

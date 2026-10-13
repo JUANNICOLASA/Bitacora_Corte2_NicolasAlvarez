@@ -8,6 +8,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
+// S07 - DTO como record: inmutable, Java genera constructor, accessors, equals, hashCode y toString.
+// Transporta datos entre el cliente y la API sin exponer la entidad de la BD.
+// S08 - Validaciones de INPUT con Bean Validation (@NotBlank, @NotNull, @Positive, @Size).
+// Se activan con @Valid en el controller. La regla "alcoholico necesita destilado" es de NEGOCIO,
+// por eso esta en CoctelValidator y no aqui.
 @Schema(description = "Datos para crear o actualizar un coctel de la carta")
 public record CoctelRequestDTO(
 

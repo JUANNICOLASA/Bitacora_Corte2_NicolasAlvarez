@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+// Optional: si no existe el usuario se maneja con orElseThrow en vez de devolver null
 @Repository
 public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
 

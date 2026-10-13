@@ -17,6 +17,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+// S10 - Filtro JWT, corre una vez por peticion (OncePerRequestFilter):
+// 1. Lee el header Authorization: Bearer <token>
+// 2. Si la firma es valida saca el email (subject) y el rol (claim) del token
+// 3. Convierte el rol en GrantedAuthority "ROLE_X" para que funcione hasRole('X') en @PreAuthorize
+// 4. Guarda la autenticacion en el SecurityContext. No se consulta la BD: autenticacion sin estado
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {

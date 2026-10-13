@@ -17,6 +17,7 @@ public record PedidoRequestDTO(
         Integer numeroMesa,
 
         @NotEmpty(message = "La comanda debe tener al menos un coctel")
+        // @Valid en la lista: tambien valida cada ItemPedidoRequestDTO (validacion en cascada)
         @Valid
         List<ItemPedidoRequestDTO> items
 ) {

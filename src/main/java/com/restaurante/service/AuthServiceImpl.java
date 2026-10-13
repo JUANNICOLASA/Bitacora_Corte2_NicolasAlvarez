@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+// S10 - Login con JWT:
+// 1. AuthenticationManager valida email + password (compara contra el hash BCrypt)
+// 2. Si es valido se genera el JWT con el email y el rol
+// OWASP Identification and Authentication Failures: despues de 5 intentos fallidos se bloquea el login
+// 15 minutos (contra fuerza bruta) -> 429 Too Many Requests.
 @Slf4j
 @Service
 @Transactional
@@ -41,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final Map<String, Intento> intentosFallidos = new ConcurrentHashMap<>();
 
+    // Record: clase inmutable y concisa (constructor, accessors, equals, hashCode y toString automaticos)
     private record Intento(int cantidad, LocalDateTime ultimo) {
     }
 
@@ -91,6 +97,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Usuario registrar(Usuario usuario) {
+        // El registro publico siempre crea CLIENTE: nadie se puede auto asignar ADMIN (OWASP Broken Access Control)
         usuario.setRol(Rol.CLIENTE);
         return crear(usuario);
     }
@@ -104,6 +111,7 @@ public class AuthServiceImpl implements AuthService {
         usuario.setId(null);
         usuario.setEmail(correo);
         usuario.setNombre(usuario.getNombre().trim());
+        // La contrasena se guarda hasheada con BCrypt (OWASP Cryptographic Failures)
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         UsuarioEntity guardado = usuarioRepository.save(usuarioEntityMapper.toEntity(usuario));
         log.info("Usuario creado: id={}, rol={}", guardado.getId(), guardado.getRol());

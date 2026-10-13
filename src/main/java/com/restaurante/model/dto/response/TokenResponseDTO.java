@@ -1,5 +1,6 @@
 package com.restaurante.model.dto.response;
 
+// S10 - Respuesta del login: {"token": "eyJ...", "tipo": "Bearer"}
 public record TokenResponseDTO(
         String token,
         String tipo

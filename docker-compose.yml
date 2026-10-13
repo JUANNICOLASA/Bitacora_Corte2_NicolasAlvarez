@@ -1,3 +1,6 @@
+# S10 - docker-compose: levanta la API + PostgreSQL + MongoDB juntos en la misma red.
+# docker compose up -d --build. Las credenciales salen del .env (no se suben).
+# Para muchos contenedores en produccion se usaria un orquestador como Kubernetes.
 services:
   api:
     build: .
@@ -13,6 +16,7 @@ services:
       MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/blue_velvet?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
       USUARIOS_PASSWORD: ${USUARIOS_PASSWORD}
+    # La API espera a que las bases de datos esten sanas (healthcheck)
     depends_on:
       postgres:
         condition: service_healthy
@@ -30,6 +34,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
+    # Volumen: los datos sobreviven aunque se borre el contenedor
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

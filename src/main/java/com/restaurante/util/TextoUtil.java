@@ -3,6 +3,7 @@ package com.restaurante.util;
 import java.text.Normalizer;
 import java.util.Locale;
 
+// S07 - Utilidad estatica y reutilizable (normalizar texto, quitar tildes, revisar vacios)
 public final class TextoUtil {
 
     private TextoUtil() {

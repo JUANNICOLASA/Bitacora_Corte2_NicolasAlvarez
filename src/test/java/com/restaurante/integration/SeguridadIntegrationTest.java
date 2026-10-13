@@ -30,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// S10 - Prueba de integracion: levanta todo el contexto de Spring y prueba 401, 403, login con JWT,
+// CORS y cabeceras de seguridad. Mongo se reemplaza con @MockitoBean.
 @SpringBootTest(classes = RestauranteApplication.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
