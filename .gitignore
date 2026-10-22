@@ -27,3 +27,4 @@ Thumbs.db
 .env.*
 !.env.example
 *.p12
+!frontend/.env.production
