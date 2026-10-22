@@ -76,7 +76,8 @@ jobs:
             DB_PASSWORD="${{ secrets.DB_PASSWORD_PROD }}" \
             MONGO_URI="${{ secrets.MONGO_URI_PROD }}" \
             JWT_SECRET="${{ secrets.JWT_SECRET_PROD }}" \
-            USUARIOS_PASSWORD="${{ secrets.USUARIOS_PASSWORD_PROD }}"
+            USUARIOS_PASSWORD="${{ secrets.USUARIOS_PASSWORD_PROD }}" \
+            CORS_ORIGENES="https://blue-velvet-jnam.vercel.app,http://localhost:5173"
 
       - name: Desplegar en Azure Web App (PROD)
         uses: azure/webapps-deploy@v3
