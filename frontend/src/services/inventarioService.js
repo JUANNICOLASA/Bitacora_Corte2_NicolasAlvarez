@@ -6,6 +6,11 @@ export const coctelService = {
     return data
   },
 
+  async obtener(id) {
+    const { data } = await axiosClient.get(`/cocteles/${id}`)
+    return data
+  },
+
   async crear(coctel) {
     const { data } = await axiosClient.post('/cocteles', coctel)
     return data
@@ -29,6 +34,11 @@ export const coctelService = {
 export const platoService = {
   async listar() {
     const { data } = await axiosClient.get('/platos')
+    return data
+  },
+
+  async obtener(id) {
+    const { data } = await axiosClient.get(`/platos/${id}`)
     return data
   },
 

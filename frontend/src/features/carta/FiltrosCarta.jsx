@@ -5,7 +5,7 @@ const secciones = [
   { id: 'cocina', nombre: 'Cocina' }
 ]
 
-export default function FiltrosCarta({ seccion, alCambiarSeccion, categorias, categoria, alCambiarCategoria, busqueda, alBuscar }) {
+export default function FiltrosCarta({ seccion, alCambiarSeccion, categorias, categoria, alCambiarCategoria, busqueda, alBuscar, soloDisponibles, alCambiarDisponibles }) {
   return (
     <div className="filtros">
       <div className="filtros__secciones" role="tablist" aria-label="Secciones de la carta">
@@ -39,6 +39,16 @@ export default function FiltrosCarta({ seccion, alCambiarSeccion, categorias, ca
               </button>
             </li>
           ))}
+          <li>
+            <button
+              type="button"
+              className={`chip chip--disponibles ${soloDisponibles ? 'chip--activo' : ''}`}
+              aria-pressed={soloDisponibles}
+              onClick={() => alCambiarDisponibles(!soloDisponibles)}
+            >
+              Solo disponibles
+            </button>
+          </li>
         </ul>
 
         <label className="buscador">

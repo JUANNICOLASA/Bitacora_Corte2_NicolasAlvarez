@@ -16,6 +16,11 @@ export const pedidoService = {
     return data
   },
 
+  async obtener(id) {
+    const { data } = await axiosClient.get(`/pedidos/${id}`)
+    return data
+  },
+
   async listarActivas() {
     const { data } = await axiosClient.get('/pedidos/activos')
     return data

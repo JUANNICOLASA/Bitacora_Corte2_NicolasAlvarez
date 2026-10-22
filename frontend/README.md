@@ -243,7 +243,7 @@ Los productos agotados muestran el texto "AGOTADO EN BARRA" (o "AGOTADO EN COCIN
 
 - **Descripción:** muestra los cócteles y los platos con su precio, disponibilidad y calificación.
 - **Pantallas:** La carta y ficha del producto.
-- **Flujo básico:** el usuario abre la carta, elige la pestaña de cócteles o de cocina, filtra por categoría o busca por nombre, destilado o ingrediente, y abre la ficha de un producto.
+- **Flujo básico:** el usuario abre la carta, elige la pestaña de cócteles o de cocina, filtra por categoría, deja solo los productos disponibles o busca por nombre, destilado o ingrediente, y abre la ficha de un producto. Al abrir la ficha de un cóctel se consulta otra vez su disponibilidad, para no pedir algo que se agotó después de cargar la carta.
 - **Flujo de errores:** si la API no responde se muestra un aviso en lugar de la lista. Si la búsqueda no encuentra nada se ofrece volver a ver toda la carta.
 
 ### Personalizar y pedir un cóctel
@@ -257,8 +257,8 @@ Los productos agotados muestran el texto "AGOTADO EN BARRA" (o "AGOTADO EN COCIN
 
 - **Descripción:** el cliente ve sus comandas y el mesero las del salón; ambos pueden cambiar el licor una sola vez mientras la comanda está recibida, y el mesero puede cancelarla.
 - **Pantallas:** Mi cuenta y Servicio.
-- **Flujo básico:** la lista se actualiza sola cada treinta segundos. En un ítem se elige "Cambiar el licor", se escribe el nuevo destilado y se guarda.
-- **Flujo de errores:** el botón de cambio solo aparece cuando la regla lo permite; si la barra empezó a preparar la comanda entretanto, se muestra el mensaje de la API.
+- **Flujo básico:** la lista se actualiza sola cada treinta segundos y también se puede buscar una comanda por su número. En un ítem se elige "Cambiar el licor", se escribe el nuevo destilado y se guarda.
+- **Flujo de errores:** el botón de cambio solo aparece cuando la regla lo permite; si la barra empezó a preparar la comanda entretanto, se muestra el mensaje de la API. Si un cliente busca una comanda que no es suya, se le avisa sin mostrarla.
 
 ### Tablero de la barra
 
@@ -338,3 +338,4 @@ El proyecto en Vercel usa la carpeta `frontend` como raíz, `npm run build` como
 |---|---|---|
 | 1.0 | 2026-10-21 | Prototipo funcional con la landing, la carta y el ingreso, usando datos locales. |
 | 1.1 | 2026-10-21 | Conexión con la API: sesión por rol, pedidos, tablero de la barra, inventario, administración de la carta, reservas, calificaciones y receta de referencia. |
+| 1.2 | 2026-10-21 | Nuevas fotos de los postres, filtro de productos disponibles, búsqueda de comandas por número y datos actualizados al editar un producto. |

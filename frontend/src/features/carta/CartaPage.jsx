@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useCarta } from '../../hooks/useCarta'
+import { cartaService } from '../../services/cartaService'
 import { categoriasCocteles } from '../../data/cocteles'
 import { categoriasCocina } from '../../data/cocina'
 import Ornamento from '../../components/ui/Ornamento'
@@ -19,6 +20,8 @@ export default function CartaPage() {
   const [parametros, setParametros] = useSearchParams()
   const [categoria, setCategoria] = useState('TODOS')
   const [busqueda, setBusqueda] = useState('')
+  const [soloDisponibles, setSoloDisponibles] = useState(false)
+  const [idsDisponibles, setIdsDisponibles] = useState(null)
 
   const seccion = parametros.get('seccion') === 'cocina' ? 'cocina' : 'cocteles'
   const slugAbierto = parametros.get('item')
@@ -26,6 +29,20 @@ export default function CartaPage() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+
+  useEffect(() => {
+    if (!soloDisponibles) {
+      return undefined
+    }
+    let activo = true
+    cartaService
+      .idsDisponibles()
+      .then((ids) => activo && setIdsDisponibles(ids))
+      .catch(() => activo && setIdsDisponibles(null))
+    return () => {
+      activo = false
+    }
+  }, [soloDisponibles])
 
   const actualizarParametros = useCallback(
     (cambios) => {
@@ -55,10 +72,14 @@ export default function CartaPage() {
     const termino = normalizar(busqueda.trim())
     return productos.filter((producto) => {
       const enCategoria = categoria === 'TODOS' || producto.categoria === categoria
+      const disponible = producto.tipo === 'coctel' && idsDisponibles ? idsDisponibles.has(producto.id) : producto.disponible
+      if (soloDisponibles && !disponible) {
+        return false
+      }
       const texto = normalizar([producto.nombre, producto.descripcion, producto.destiladoBase ?? '', ...producto.ingredientes].join(' '))
       return enCategoria && (!termino || texto.includes(termino))
     })
-  }, [productos, categoria, busqueda])
+  }, [productos, categoria, busqueda, soloDisponibles, idsDisponibles])
 
   const productoAbierto = useMemo(
     () => [...cocteles, ...cocina].find((producto) => producto.slug === slugAbierto) ?? null,
@@ -85,6 +106,8 @@ export default function CartaPage() {
         alCambiarCategoria={setCategoria}
         busqueda={busqueda}
         alBuscar={setBusqueda}
+        soloDisponibles={soloDisponibles}
+        alCambiarDisponibles={setSoloDisponibles}
       />
 
       <div id="carta-listado" role="tabpanel" aria-labelledby={`pestana-${seccion}`} className="carta__listado">
@@ -100,13 +123,18 @@ export default function CartaPage() {
 
         {!cargando && !error && filtrados.length === 0 && (
           <div className="carta__aviso">
-            <p>No encontramos nada con "{busqueda}" en {nombreCategoria?.toLowerCase()}.</p>
+            <p>
+              {busqueda
+                ? `No encontramos nada con "${busqueda}" en ${nombreCategoria?.toLowerCase()}.`
+                : `No hay nada disponible en este momento en ${nombreCategoria?.toLowerCase()}.`}
+            </p>
             <button
               type="button"
               className="boton boton--secundario"
               onClick={() => {
                 setBusqueda('')
                 setCategoria('TODOS')
+                setSoloDisponibles(false)
               }}
             >
               Ver toda la carta

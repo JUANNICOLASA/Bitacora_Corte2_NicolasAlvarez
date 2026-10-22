@@ -81,6 +81,16 @@ export const cartaService = {
     return data.map((plato) => aPlato(plato, resumenes))
   },
 
+  async obtenerCoctel(idCoctel) {
+    const { data } = await axiosClient.get(`/menu/${idCoctel}`)
+    return data
+  },
+
+  async idsDisponibles() {
+    const { data } = await axiosClient.get('/menu/disponibles')
+    return new Set(data.map((coctel) => coctel.id))
+  },
+
   async listarModificadores(idCoctel) {
     const { data } = await axiosClient.get(`/menu/${idCoctel}/modificadores`)
     return data

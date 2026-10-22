@@ -12,6 +12,7 @@ export default function PedirCoctel({ coctel }) {
   const { agregar } = useComanda()
   const ubicacion = useLocation()
   const [modificadores, setModificadores] = useState([])
+  const [disponibleAhora, setDisponibleAhora] = useState(coctel.disponible)
   const [cargando, setCargando] = useState(true)
   const [elegidos, setElegidos] = useState([])
   const [cantidad, setCantidad] = useState(1)
@@ -24,6 +25,10 @@ export default function PedirCoctel({ coctel }) {
 
   useEffect(() => {
     let activo = true
+    cartaService
+      .obtenerCoctel(coctel.id)
+      .then((actual) => activo && setDisponibleAhora(actual.seleccionable))
+      .catch(() => activo && setDisponibleAhora(coctel.disponible))
     cartaService
       .listarModificadores(coctel.id)
       .then((lista) => activo && setModificadores(lista))
@@ -72,7 +77,7 @@ export default function PedirCoctel({ coctel }) {
       {!cargando && modificadores.length > 0 && (
         <ul className="pedir__modificadores">
           {modificadores.map((modificador) => {
-            const seleccionable = pide && coctel.disponible && modificador.habilitado
+            const seleccionable = pide && disponibleAhora && modificador.habilitado
             return (
               <li key={modificador.id} className={`pedir__modificador ${modificador.habilitado ? '' : 'pedir__modificador--bloqueado'}`}>
                 <label>
@@ -91,7 +96,7 @@ export default function PedirCoctel({ coctel }) {
         </ul>
       )}
 
-      {pide && coctel.disponible && (
+      {pide && disponibleAhora && (
         <form className="calificar pedir__formulario" onSubmit={agregarAComanda} noValidate>
           {conAlcohol && (
             <div className="campo">
@@ -127,7 +132,13 @@ export default function PedirCoctel({ coctel }) {
         </form>
       )}
 
-      {!usuario && coctel.disponible && (
+      {coctel.disponible && !disponibleAhora && (
+        <p className="etiqueta etiqueta--agotado etiqueta--en-linea">
+          <IconoCandado /> Se acaba de agotar en barra
+        </p>
+      )}
+
+      {!usuario && disponibleAhora && (
         <p className="resenas__vacio">
           Para pedirlo desde tu mesa, <Link to="/acceso" state={{ desde: `${ubicacion.pathname}${ubicacion.search}` }} className="enlace-subrayado">ingresa con tu cuenta</Link>.
         </p>

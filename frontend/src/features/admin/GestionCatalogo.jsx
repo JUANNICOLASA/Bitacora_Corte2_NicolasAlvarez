@@ -29,12 +29,19 @@ export default function GestionCatalogo({ titulo, singular, servicio, vacio, val
     setErrorGeneral(null)
   }
 
-  const editar = (item) => {
-    setEditando(item.id)
-    setFormulario(Object.fromEntries(Object.keys(vacio).map((clave) => [clave, item[clave] ?? vacio[clave]])))
+  const editar = async (item) => {
     setErrores({})
     setAviso(null)
-    document.getElementById(`formulario-${singular}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setErrorGeneral(null)
+    try {
+      const actual = await servicio.obtener(item.id)
+      setDatos((lista) => lista.map((otro) => (otro.id === actual.id ? actual : otro)))
+      setEditando(actual.id)
+      setFormulario(Object.fromEntries(Object.keys(vacio).map((clave) => [clave, actual[clave] ?? vacio[clave]])))
+      document.getElementById(`formulario-${singular}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } catch (err) {
+      setErrorGeneral(mensajeDeError(err))
+    }
   }
 
   const guardar = async (e) => {

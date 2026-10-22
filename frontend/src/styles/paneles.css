@@ -97,6 +97,10 @@
   min-width: 200px;
 }
 
+.panel__resultado {
+  margin-bottom: 22px;
+}
+
 .panel__botones {
   display: flex;
   flex-wrap: wrap;
