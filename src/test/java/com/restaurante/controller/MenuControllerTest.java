@@ -1,12 +1,16 @@
 package com.restaurante.controller;
 
+import com.restaurante.exception.ServicioExternoException;
 import com.restaurante.mapper.MenuMapper;
+import com.restaurante.mapper.RecetaExternaMapper;
 import com.restaurante.model.domain.CategoriaCoctel;
 import com.restaurante.model.domain.Coctel;
 import com.restaurante.model.domain.Modificador;
+import com.restaurante.model.domain.RecetaExterna;
 import com.restaurante.model.domain.TipoBebida;
 import com.restaurante.service.CoctelService;
 import com.restaurante.service.ModificadorService;
+import com.restaurante.service.RecetaExternaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +38,9 @@ class MenuControllerTest {
     @Mock
     private ModificadorService modificadorService;
 
+    @Mock
+    private RecetaExternaService recetaExternaService;
+
     private MockMvc mockMvc;
 
     private final Coctel pinaColada = Coctel.builder().id(5L).nombre("Pina Colada")
@@ -44,7 +51,7 @@ class MenuControllerTest {
     @BeforeEach
     void setUp() {
         MenuController controller = new MenuController(coctelService, modificadorService,
-                Mappers.getMapper(MenuMapper.class));
+                Mappers.getMapper(MenuMapper.class), recetaExternaService, Mappers.getMapper(RecetaExternaMapper.class));
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -105,5 +112,25 @@ class MenuControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].habilitado").value(false))
                 .andExpect(jsonPath("$[0].etiqueta").value("NO DISPONIBLE PARA MOCKTAIL"));
+    }
+
+    @Test
+    void recetaDeReferenciaDelProveedorExterno() throws Exception {
+        when(recetaExternaService.buscarPorCoctel(5L)).thenReturn(RecetaExterna.builder().nombre("Pina Colada")
+                .vaso("Collins glass").ingredientes(List.of("3 oz Light rum")).fuente("TheCocktailDB").build());
+
+        mockMvc.perform(get(URL + "/5/receta"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ingredientes[0]").value("3 oz Light rum"))
+                .andExpect(jsonPath("$.fuente").value("TheCocktailDB"));
+    }
+
+    @Test
+    void recetaConProveedorCaidoDevuelve502() throws Exception {
+        when(recetaExternaService.buscarPorCoctel(5L)).thenThrow(new ServicioExternoException("No disponible"));
+
+        mockMvc.perform(get(URL + "/5/receta"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.codigo").value("BV-502"));
     }
 }

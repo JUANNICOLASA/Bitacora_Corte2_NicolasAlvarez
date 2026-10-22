@@ -159,4 +159,13 @@ class PedidoControllerTest {
         mockMvc.perform(delete(URL + "/2"))
                 .andExpect(status().isUnprocessableEntity());
     }
+
+    @Test
+    void misComandasDevuelve200() throws Exception {
+        when(pedidoService.listarMios(any())).thenReturn(List.of(pedido));
+
+        mockMvc.perform(get(URL + "/mias"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].numeroMesa").value(7));
+    }
 }

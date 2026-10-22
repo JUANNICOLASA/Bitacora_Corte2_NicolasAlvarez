@@ -5,6 +5,7 @@ import com.restaurante.RestauranteApplication;
 import com.restaurante.model.domain.Rol;
 import com.restaurante.model.domain.Usuario;
 import com.restaurante.repository.EventoComandaRepository;
+import com.restaurante.repository.ResenaRepository;
 import com.restaurante.repository.UsuarioRepository;
 import com.restaurante.security.JwtUtil;
 import com.restaurante.service.AuthService;
@@ -56,6 +57,9 @@ class SeguridadIntegrationTest {
 
     @MockitoBean
     private EventoComandaRepository eventoComandaRepository;
+
+    @MockitoBean
+    private ResenaRepository resenaRepository;
 
     @BeforeEach
     void crearUsuarios() {
@@ -190,6 +194,32 @@ class SeguridadIntegrationTest {
         mockMvc.perform(options("/api/v1/menu")
                         .header(HttpHeaders.ORIGIN, "http://sitio-malicioso.com")
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cocinaYCalificacionesSonPublicas() throws Exception {
+        mockMvc.perform(get("/api/v1/platos")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/resenas/resumen")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/resenas").param("tipo", "COCTEL").param("idProducto", "1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void calificarSinTokenDevuelve401() throws Exception {
+        mockMvc.perform(post("/api/v1/resenas").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tipo\":\"COCTEL\",\"idProducto\":1,\"estrellas\":5}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void laAgendaDeReservasEsDelPersonal() throws Exception {
+        String token = login("cliente.seguridad@bluevelvet.com");
+
+        mockMvc.perform(get("/api/v1/reservas/mias")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/reservas/mias").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/reservas").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isForbidden());
     }
 }

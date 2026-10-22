@@ -83,6 +83,14 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoMapper.toResponseList(pedidoService.listarActivos()));
     }
 
+    @Operation(summary = "Comandas creadas por el usuario autenticado")
+    @ApiResponse(responseCode = "200", description = "Comandas del usuario, de la mas reciente a la mas antigua")
+    @PreAuthorize("hasAnyRole('MESERO','CLIENTE')")
+    @GetMapping("/mias")
+    public ResponseEntity<List<PedidoResponseDTO>> listarMias(Authentication usuario) {
+        return ResponseEntity.ok(pedidoMapper.toResponseList(pedidoService.listarMios(usuario)));
+    }
+
     @Operation(summary = "Obtener una comanda por id")
     @ApiResponse(responseCode = "200", description = "Comanda encontrada")
     @ApiResponse(responseCode = "404", description = "La comanda no existe",

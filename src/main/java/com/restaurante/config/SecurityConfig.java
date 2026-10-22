@@ -59,6 +59,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/registro").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/menu", "/api/v1/menu/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/platos", "/api/v1/platos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/resenas", "/api/v1/resenas/resumen").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/reservas").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated())
                 // 401 (no autenticado) y 403 (sin permisos) con el mismo ErrorResponseDTO del resto de la API

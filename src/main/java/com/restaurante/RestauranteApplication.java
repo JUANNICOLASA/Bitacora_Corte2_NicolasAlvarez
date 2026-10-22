@@ -2,6 +2,7 @@ package com.restaurante;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 // S07 - Spring Boot: configuracion automatica, enfoque "obstinado" de la configuracion y app independiente
 // (se ejecuta como un .jar con Tomcat embebido).
@@ -12,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 // scanBasePackages = "edu.dosw.parcial" y @EnableMongoRepositories(basePackages = "...persistence.repositories").
 // S07 - Arquitectura cliente-servidor: el cliente PIDE (request) y este servidor RESPONDE (response) en JSON.
 @SpringBootApplication
+@EnableFeignClients
 public class RestauranteApplication {
 
     public static void main(String[] args) {

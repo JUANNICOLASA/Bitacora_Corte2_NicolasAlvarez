@@ -280,4 +280,12 @@ class PedidoServiceImplTest {
         verify(eventoComandaService).registrar(1L, TipoEvento.CANCELADA, EstadoPedido.CANCELADO,
                 "Comanda cancelada", "mesero@bluevelvet.com");
     }
+
+    @Test
+    void listarMiosBuscaPorElCorreoDelUsuario() {
+        PedidoEntity guardado = pedidoGuardado(EstadoPedido.RECIBIDO, TipoBebida.ALCOHOLICA, 0);
+        when(pedidoRepository.findByUsuarioOrderByIdDesc("mesero@bluevelvet.com")).thenReturn(List.of(guardado));
+
+        assertThat(pedidoService.listarMios(mesero)).extracting(Pedido::getNumeroMesa).containsExactly(7);
+    }
 }

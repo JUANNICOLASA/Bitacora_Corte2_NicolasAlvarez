@@ -16,6 +16,8 @@ public interface PedidoService {
 
     List<Pedido> listarActivos();
 
+    List<Pedido> listarMios(Authentication usuario);
+
     Pedido obtenerPorId(Long id, Authentication usuario);
 
     Pedido cambiarEstado(Long id, EstadoPedido nuevoEstado, Authentication usuario);

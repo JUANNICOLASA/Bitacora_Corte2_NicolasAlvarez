@@ -3,6 +3,7 @@ package com.restaurante.integration;
 import com.jayway.jsonpath.JsonPath;
 import com.restaurante.RestauranteApplication;
 import com.restaurante.repository.EventoComandaRepository;
+import com.restaurante.repository.ResenaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,6 +13,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -35,6 +40,9 @@ class RestauranteApplicationTests {
 
     @MockitoBean
     private EventoComandaRepository eventoComandaRepository;
+
+    @MockitoBean
+    private ResenaRepository resenaRepository;
 
     private Integer crear(String url, String body, RequestPostProcessor usuario) throws Exception {
         String respuesta = mockMvc.perform(post(url).with(usuario).contentType(MediaType.APPLICATION_JSON).content(body))
@@ -120,5 +128,53 @@ class RestauranteApplicationTests {
 
         mockMvc.perform(get("/api/v1/cocteles/" + id).with(ADMIN))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void reservaPublicaQueElMeseroVeEnLaAgenda() throws Exception {
+        LocalDate fecha = LocalDate.now(ZoneId.of("America/Bogota")).plusDays(3);
+        if (fecha.getDayOfWeek() == DayOfWeek.MONDAY) {
+            fecha = fecha.plusDays(1);
+        }
+        String respuesta = mockMvc.perform(post("/api/v1/reservas").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Laura Gomez\",\"telefono\":\"3005550186\",\"correo\":\"laura@correo.com\","
+                                + "\"fecha\":\"" + fecha + "\",\"hora\":\"21:30\",\"personas\":4}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.estado").value("CONFIRMADA"))
+                .andExpect(jsonPath("$.hora").value("21:30"))
+                .andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(respuesta, "$.id");
+        String codigo = JsonPath.read(respuesta, "$.codigo");
+
+        mockMvc.perform(get("/api/v1/reservas").param("fecha", fecha.toString()).with(MESERO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.codigo == '" + codigo + "')].personas").value(4));
+
+        mockMvc.perform(patch("/api/v1/reservas/" + id + "/estado").with(MESERO)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CUMPLIDA\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("CUMPLIDA"));
+
+        mockMvc.perform(delete("/api/v1/reservas/" + id).with(MESERO))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void cocinaPublicaAdministradaPorElAdmin() throws Exception {
+        String plato = "{\"nombre\":\"Tabla de quesos\",\"precio\":48000,\"categoria\":\"PARA_COMPARTIR\"}";
+        Integer id = crear("/api/v1/platos", plato, ADMIN);
+
+        mockMvc.perform(post("/api/v1/platos").with(MESERO).contentType(MediaType.APPLICATION_JSON).content(plato))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(patch("/api/v1/platos/" + id + "/disponibilidad").with(ADMIN)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"disponible\":false}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/platos/" + id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.disponible").value(false));
+
+        mockMvc.perform(delete("/api/v1/platos/" + id).with(ADMIN)).andExpect(status().isNoContent());
     }
 }

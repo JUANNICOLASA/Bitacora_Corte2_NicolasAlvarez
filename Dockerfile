@@ -20,4 +20,4 @@ USER bluevelvet
 # Los secretos NO van dentro de la imagen, llegan como variables de entorno al correr el contenedor
 ENV SPRING_PROFILES_ACTIVE=docker
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=America/Bogota", "-jar", "app.jar"]

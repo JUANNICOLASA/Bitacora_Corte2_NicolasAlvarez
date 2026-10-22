@@ -26,6 +26,9 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Long> {
     @EntityGraph(attributePaths = "items")
     List<PedidoEntity> findByEstadoNotInOrderByFechaCreacionAsc(Collection<EstadoPedido> estados);
 
+    @EntityGraph(attributePaths = "items")
+    List<PedidoEntity> findByUsuarioOrderByIdDesc(String usuario);
+
     // @Query con JPQL escrito a mano (JOIN FETCH) cuando la consulta deja de ser trivial
     @Query("select p from PedidoEntity p left join fetch p.items where p.id = :id")
     Optional<PedidoEntity> buscarConItems(@Param("id") Long id);

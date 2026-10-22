@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -60,6 +61,13 @@ public class GlobalExceptionHandler {
                                                                 HttpServletRequest request) {
         String mensaje = "El valor '" + ex.getValue() + "' no es valido para el parametro " + ex.getName();
         return construir(HttpStatus.BAD_REQUEST, "BV-400", mensaje, request, List.of());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponseDTO> manejarParametroFaltante(MissingServletRequestParameterException ex,
+                                                                     HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST, "BV-400",
+                "Falta el parametro " + ex.getParameterName(), request, List.of());
     }
 
     // S09 - Se violo una restriccion de la BD (unique, llave foranea) -> 409

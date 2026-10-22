@@ -1,13 +1,16 @@
 package com.restaurante.controller;
 
 import com.restaurante.mapper.MenuMapper;
+import com.restaurante.mapper.RecetaExternaMapper;
 import com.restaurante.model.domain.CategoriaCoctel;
 import com.restaurante.model.domain.Coctel;
 import com.restaurante.model.dto.response.ErrorResponseDTO;
 import com.restaurante.model.dto.response.MenuItemResponseDTO;
 import com.restaurante.model.dto.response.ModificadorMenuResponseDTO;
+import com.restaurante.model.dto.response.RecetaExternaResponseDTO;
 import com.restaurante.service.CoctelService;
 import com.restaurante.service.ModificadorService;
+import com.restaurante.service.RecetaExternaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,6 +42,8 @@ public class MenuController {
     private final CoctelService coctelService;
     private final ModificadorService modificadorService;
     private final MenuMapper menuMapper;
+    private final RecetaExternaService recetaExternaService;
+    private final RecetaExternaMapper recetaExternaMapper;
 
     @Operation(summary = "Ver la carta completa",
             description = "Incluye los cocteles agotados con la etiqueta AGOTADO EN BARRA y seleccionable=false")
@@ -80,5 +85,17 @@ public class MenuController {
     public ResponseEntity<List<ModificadorMenuResponseDTO>> verModificadores(@PathVariable Long id) {
         Coctel coctel = coctelService.obtenerPorId(id);
         return ResponseEntity.ok(menuMapper.toModificadoresMenu(modificadorService.listar(), coctel));
+    }
+
+    @Operation(summary = "Ver la receta de referencia de un coctel",
+            description = "Se consulta en TheCocktailDB por medio de un cliente Feign")
+    @ApiResponse(responseCode = "200", description = "Receta de referencia")
+    @ApiResponse(responseCode = "404", description = "El coctel no existe o no tiene receta de referencia",
+            content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @ApiResponse(responseCode = "502", description = "El proveedor externo no responde",
+            content = @Content(schema = @Schema(implementation = ErrorResponseDTO.class)))
+    @GetMapping("/{id}/receta")
+    public ResponseEntity<RecetaExternaResponseDTO> verReceta(@PathVariable Long id) {
+        return ResponseEntity.ok(recetaExternaMapper.toResponse(recetaExternaService.buscarPorCoctel(id)));
     }
 }

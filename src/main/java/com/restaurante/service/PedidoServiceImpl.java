@@ -117,6 +117,14 @@ public class PedidoServiceImpl implements PedidoService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Pedido> listarMios(Authentication usuario) {
+        return pedidoRepository.findByUsuarioOrderByIdDesc(usuario.getName()).stream()
+                .map(pedidoEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Pedido obtenerPorId(Long id, Authentication usuario) {
         Pedido pedido = pedidoEntityMapper.toDomain(buscarEntidad(id));
         pedidoValidator.validarPropietario(pedido, usuario);
